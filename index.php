@@ -1,16 +1,14 @@
 <?php
-// Đặt tiêu đề cho trang này
+// 1. GỌI LOGIC TRƯỚC TIÊN
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+require 'dung_chung/ket_noi_csdl.php';
+
+// 2. PHẦN LOGIC PHP CỦA RIÊNG TRANG NÀY
 $page_title = "Trang Chủ - PhoneStore";
 
-// 1. GỌI ĐẦU TRANG (Đã bao gồm session, CSDL, CSS, Menu và Turbolinks)
-require 'dung_chung/dau_trang.php';
-?>
-
-<?php
-// 2. PHẦN LOGIC PHP CỦA RIÊNG TRANG NÀY
-// (Tất cả logic PHP của trang chủ nằm ở đây)
-
-// LẤY HÃNG
+// LẤY HÃNG (CHO BỘ LỌC)
 $sql_hang = "SELECT id_hang, ten_hang FROM hang_san_xuat WHERE trang_thai = 'hien_thi' ORDER BY ten_hang ASC";
 $result_hang = $conn->query($sql_hang);
 $hang_list = [];
@@ -68,7 +66,7 @@ $stmt_products->execute();
 $result_products = $stmt_products->get_result();
 $hom_nay = date('Y-m-d'); 
 
-// LẤY TIN TỨC (Đã sửa lỗi tom_tat)
+// LẤY TIN TỨC (CHO CUỐI TRANG)
 $sql_news = "SELECT id_tin_tuc, tieu_de, noi_dung_1, anh_dai_dien, ngay_dang 
              FROM tin_tuc 
              WHERE trang_thai = 'hien_thi' 
@@ -83,7 +81,14 @@ if ($result_news) {
 }
 ?>
 
+<?php
+// 3. GỌI ĐẦU TRANG 
+require 'dung_chung/dau_trang.php';
+// (dau_trang.php đã được sửa để có <div> toast và ID cho giỏ hàng)
+?>
+
 <style>
+    /* CSS riêng của trang Index */
     .hero {
         height: 50vh;
         background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?q=80&w=2070&auto=format&fit=crop');
@@ -102,173 +107,55 @@ if ($result_news) {
         transition: background-color 0.3s ease;
     }
     .hero .hero-cta:hover { background-color: #0056b3; }
-    .filter-controls {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-    .section-title {
-        font-size: 2rem;
-        color: var(--dark-color);
-        border-bottom: 3px solid var(--primary-color);
-        padding-bottom: 10px;
-        margin: 0;
-        display: inline-block;
-    }
-    .btn-filter-toggle {
-        background-color: #6c757d; color: white;
-        border: none; padding: 10px 15px;
-        font-size: 1rem; font-weight: 500;
-        border-radius: 5px; cursor: pointer;
-    }
+    
+    /* CSS Cho Bộ Lọc */
+    .filter-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .btn-filter-toggle { background-color: #6c757d; color: white; border: none; padding: 10px 15px; font-size: 1rem; font-weight: 500; border-radius: 5px; cursor: pointer; }
     .filter-bar {
-        background-color: var(--white-color);
-        padding: 20px;
-        border-radius: var(--border-radius);
-        box-shadow: var(--shadow);
-        margin-bottom: 25px;
-        display: none; 
+        background-color: var(--white-color); padding: 20px;
+        border-radius: var(--border-radius); box-shadow: var(--shadow);
+        margin-bottom: 25px; display: none; 
         grid-template-columns: 1fr 1fr 1fr 150px;
-        gap: 20px;
-        align-items: flex-end;
+        gap: 20px; align-items: flex-end;
     }
     .filter-bar.active { display: grid; }
     .filter-group { display: flex; flex-direction: column; }
-    .filter-group label {
-        font-size: 0.9rem; font-weight: 500;
-        color: #555; margin-bottom: 5px;
-    }
-    .btn-filter-submit {
-        background-color: var(--primary-color);
-        color: white; border: none; padding: 10px 15px;
-        font-size: 1rem; font-weight: 500;
-        border-radius: 5px; cursor: pointer; width: 100%;
-    }
-    .brand-filter-bar {
-        display: flex; flex-wrap: wrap;
-        gap: 10px; margin-bottom: 30px;
-    }
-    .brand-link {
-        text-decoration: none; color: var(--dark-color);
-        background-color: var(--white-color);
-        border: 1px solid #ddd; padding: 8px 15px;
-        border-radius: 20px; font-size: 0.9rem;
-        font-weight: 500; transition: all 0.2s;
-    }
-    .brand-link:hover {
-        border-color: var(--primary-color);
-        color: var(--primary-color);
-    }
-    .brand-link.active {
-        background-color: var(--primary-color);
-        color: var(--white-color);
-        border-color: var(--primary-color);
-    }
+    .filter-group label { font-size: 0.9rem; font-weight: 500; color: #555; margin-bottom: 5px; }
+    .btn-filter-submit { background-color: var(--primary-color); color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 1rem; }
+    .brand-filter-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px; }
+    .brand-link { text-decoration: none; color: var(--dark-color); background-color: var(--white-color); border: 1px solid #ddd; padding: 8px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; }
+    .brand-link:hover { border-color: var(--primary-color); color: var(--primary-color); }
+    .brand-link.active { background-color: var(--primary-color); color: var(--white-color); border-color: var(--primary-color); }
+    
+    /* CSS Sản phẩm */
     .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
-    .product-card {
-        background-color: var(--white-color);
-        border: 1px solid #eee; border-radius: var(--border-radius);
-        box-shadow: var(--shadow); transition: all 0.3s ease;
-        position: relative; display: flex; flex-direction: column;
-        overflow: hidden;
-    }
+    .product-card { background-color: var(--white-color); border: 1px solid #eee; border-radius: var(--border-radius); box-shadow: var(--shadow); transition: all 0.3s ease; position: relative; display: flex; flex-direction: column; overflow: hidden; }
     .product-card:hover { transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0,0,0,0.12); }
     .product-image-link { display: block; background-color: #f9f9f9; padding: 10px; }
     .product-image { width: 100%; height: 250px; object-fit: contain; }
-    .product-details {
-        padding: 20px; flex-grow: 1; 
-        display: flex; flex-direction: column;
-        text-align: left;
-    }
+    .product-details { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; text-align: left; }
     .product-brand { font-size: 0.85rem; color: #777; margin-bottom: 5px; }
-    .product-title {
-        font-size: 1.1rem; font-weight: 600; color: var(--dark-color);
-        margin: 0; height: 44px; overflow: hidden; text-decoration: none;
-    }
+    .product-title { font-size: 1.1rem; font-weight: 600; color: var(--dark-color); margin: 0; height: 44px; overflow: hidden; text-decoration: none; }
     .product-title a { text-decoration: none; color: inherit; }
     .product-price { margin-top: auto; padding-top: 10px; }
     .product-price .current-price { font-size: 1.3rem; color: var(--danger-color); font-weight: bold; }
-    .product-price .old-price {
-        font-size: 0.9rem; color: #999;
-        text-decoration: line-through; margin-left: 8px;
-    }
-    .sale-badge {
-        position: absolute; top: 15px; right: 15px;
-        background-color: var(--danger-color); color: #fff;
-        padding: 4px 8px; font-size: 0.8rem; border-radius: 5px;
-        font-weight: bold;
-    }
+    .product-price .old-price { font-size: 0.9rem; color: #999; text-decoration: line-through; margin-left: 8px; }
+    .sale-badge { position: absolute; top: 15px; right: 15px; background-color: var(--danger-color); color: #fff; padding: 4px 8px; font-size: 0.8rem; border-radius: 5px; font-weight: bold; }
     .add-to-cart-form { margin-top: 15px; }
-    .btn-add-to-cart {
-        background-color: var(--primary-color);
-        color: white; border: none; border-radius: 5px;
-        padding: 12px 15px; width: 100%; font-size: 1rem;
-        font-weight: bold; cursor: pointer; transition: background-color 0.2s;
-    }
+    .btn-add-to-cart { background-color: var(--primary-color); color: white; border: none; border-radius: 5px; padding: 12px 15px; width: 100%; font-size: 1rem; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
     .btn-add-to-cart:hover { background-color: #0056b3; }
     
-    .news-section {
-        margin-top: 50px; padding-top: 30px;
-        border-top: 1px solid #ddd;
-    }
-    .news-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr); 
-        gap: 25px;
-    }
-    .news-card {
-        background-color: var(--white-color);
-        border-radius: var(--border-radius);
-        box-shadow: var(--shadow);
-        overflow: hidden; transition: all 0.3s ease;
-        text-decoration: none; color: var(--dark-color);
-        display: flex; flex-direction: column;
-    }
-    .news-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.12);
-    }
-    .news-image {
-        width: 100%; height: 200px;
-        object-fit: cover; 
-    }
+    /* CSS Tin Tức (Cho cuối trang) */
+    .news-section { margin-top: 40px; }
+    .news-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; }
+    .news-card { background-color: var(--white-color); border-radius: var(--border-radius); box-shadow: var(--shadow); overflow: hidden; transition: all 0.3s ease; text-decoration: none; color: var(--dark-color); display: flex; flex-direction: column; }
+    .news-card:hover { transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0,0,0,0.12); }
+    .news-image { width: 100%; height: 200px; object-fit: cover; }
     .news-content { padding: 20px; }
-    .news-date {
-        font-size: 0.85rem; color: #777;
-        margin-bottom: 10px;
-    }
-    .news-title {
-        font-size: 1.2rem; font-weight: 600;
-        margin: 0; height: 50px; 
-        overflow: hidden;
-    }
-    .news-summary {
-        font-size: 0.95rem; color: #555;
-        height: 60px; 
-        overflow: hidden; margin-top: 10px;
-    }
-    .section-footer {
-        text-align: center;
-        margin-top: 30px;
-    }
-    .btn-view-all {
-        background-color: var(--primary-color);
-        color: var(--white-color);
-        padding: 12px 25px; font-size: 1rem;
-        font-weight: bold; text-decoration: none;
-        border-radius: 5px;
-        transition: background-color 0.3s ease;
-    }
-    .btn-view-all:hover { background-color: #0056b3; }
-    @media (max-width: 900px) {
-        .news-grid { grid-template-columns: 1fr 1fr; }
-    }
-    @media (max-width: 600px) {
-        .news-grid { grid-template-columns: 1fr; }
-        .filter-bar { grid-template-columns: 1fr 1fr; }
-        .filter-bar .btn-filter-submit { grid-column: 1 / -1; }
-    }
+    .news-date { font-size: 0.85rem; color: #777; margin-bottom: 10px; }
+    .news-title { font-size: 1.2rem; font-weight: 600; margin: 0; height: 50px; overflow: hidden; }
+    .news-summary { font-size: 0.95rem; color: #555; height: 60px; overflow: hidden; margin-top: 10px; }
+    .section-footer { text-align: center; margin-top: 30px; }
 </style>
 
 <header class="hero">
@@ -280,9 +167,10 @@ if ($result_news) {
 <main class="container" id="san-pham">
     
     <div class="filter-controls">
-        <h1 class="section-title">Danh sách Sản phẩm</h1>
+        <h1 class="section-title" style="margin-bottom: 0;">Danh sách Sản phẩm</h1>
         <button id="filter-toggle-btn" class="btn-filter-toggle">Lọc Sản Phẩm</button>
     </div>
+    
     <form action="index.php" method="GET" id="filter-bar" class="filter-bar">
         <?php if ($current_id_hang > 0): ?>
             <input type="hidden" name="id_hang" value="<?php echo $current_id_hang; ?>">
@@ -307,18 +195,19 @@ if ($result_news) {
         </div>
         <button type="submit" class="btn-filter-submit">Áp dụng</button>
     </form>
+    
     <div class="brand-filter-bar">
         <?php
         $filter_params = $_GET;
         unset($filter_params['id_hang']);
         $filter_query_string = http_build_query($filter_params);
         ?>
-        <a href="index.php?<?php echo $filter_query_string; ?>" 
+        <a href="?<?php echo $filter_query_string; ?>" 
            class="brand-link <?php echo ($current_id_hang == 0) ? 'active' : ''; ?>">
            Tất cả
         </a>
         <?php foreach ($hang_list as $hang): ?>
-            <a href="index.php?id_hang=<?php echo $hang['id_hang']; ?>&<?php echo $filter_query_string; ?>" 
+            <a href="?id_hang=<?php echo $hang['id_hang']; ?>&<?php echo $filter_query_string; ?>" 
                class="brand-link <?php echo ($current_id_hang == $hang['id_hang']) ? 'active' : ''; ?>">
                <?php echo htmlspecialchars($hang['ten_hang']); ?>
             </a>
@@ -355,6 +244,7 @@ if ($result_news) {
                     <?php if ($phan_tram_hien_thi): ?>
                         <div class="sale-badge">-<?php echo $phan_tram_hien_thi; ?>%</div>
                     <?php endif; ?>
+                    
                     <a href="chi_tiet_san_pham.php?id=<?php echo $sp['id']; ?>" class="product-image-link">
                         <?php 
                         $anh_path = 'tai_len/san_pham/' . ($sp['anh_dai_dien'] ?? 'default.png');
@@ -375,12 +265,12 @@ if ($result_news) {
                                 <span class="old-price"><?php echo number_format($gia_cu, 0, ',', '.'); ?>đ</span>
                             <?php endif; ?>
                         </div>
-                        <form action="xu_ly_gio_hang.php" method="POST" class="add-to-cart-form" data-turbolinks="false">
+                        
+                        <form action="xu_ly_gio_hang.php" method="POST" class="add-to-cart-form ajax-add-to-cart-form" data-turbolinks="false">
                             <input type="hidden" name="action" value="add">
                             <input type="hidden" name="id_san_pham" value="<?php echo $sp['id']; ?>">
                             <input type="hidden" name="so_luong" value="1">
-                            <input type="hidden" name="return_url" value="index.php?<?php echo http_build_query($_GET); ?>"> 
-                            <button type="submit" class="btn-add-to-cart">Thêm vào giỏ</button>
+                            <button type="submit" class="btn-add-to-cart"><i class="fas fa-cart-plus"></i> Thêm vào giỏ</button>
                         </form>
                     </div>
                 </div>
@@ -415,17 +305,18 @@ if ($result_news) {
             <?php endif; ?>
         </div>
         <div class="section-footer">
-            <a href="tin_tuc.php" class="btn-view-all">Xem tất cả tin tức</a>
+            <a href="tin_tuc.php" class="btn" style="gap: 8px;">
+                <i class="fas fa-newspaper"></i> Xem tất cả tin tức
+            </a>
         </div>
     </div>
     
 </main> <script>
-    // Turbolinks sẽ tự động chạy lại script này khi chuyển trang
     document.addEventListener("turbolinks:load", function() {
         const toggleBtn = document.getElementById('filter-toggle-btn');
         const filterBar = document.getElementById('filter-bar');
         
-        if (toggleBtn) { // Chỉ chạy nếu có nút này
+        if (toggleBtn && filterBar) { // Chỉ chạy nếu có nút này
             toggleBtn.addEventListener('click', function() {
                 filterBar.classList.toggle('active');
                 
@@ -442,6 +333,90 @@ if ($result_news) {
             <?php endif; ?>
         }
     });
+</script>
+
+
+<script>
+    // Hàm này được gọi bởi Turbolinks mỗi khi trang tải
+    document.addEventListener("turbolinks:load", function() {
+        
+        // 1. Tìm tất cả các form "Thêm vào giỏ"
+        const allForms = document.querySelectorAll('.ajax-add-to-cart-form');
+        
+        allForms.forEach(form => {
+            // Gán sự kiện submit cho từng form
+            form.addEventListener('submit', function(event) {
+                // 2. Ngăn chặn form gửi đi (ngăn lỗi trang trắng)
+                event.preventDefault(); 
+                
+                const formData = new FormData(this);
+                
+                // 3. Gửi yêu cầu ngầm (Fetch)
+                fetch('xu_ly_gio_hang.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // 4. Xử lý kết quả JSON
+                    if (data.success) {
+                        // Cập nhật số lượng trên icon
+                        updateCartBadge(data.new_cart_count);
+                        // Hiển thị thông báo thành công
+                        showToast('Đã thêm vào giỏ hàng!', 'success');
+                    } else {
+                        // Báo lỗi (nếu có)
+                        showToast(data.message || 'Lỗi: Không thể thêm vào giỏ.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Lỗi Fetch:', error);
+                    showToast('Lỗi kết nối. Vui lòng thử lại.', 'error');
+                });
+            });
+        });
+    });
+
+    // 5. Hàm cập nhật icon giỏ hàng
+    function updateCartBadge(count) {
+        const badge = document.getElementById('cart-badge');
+        if (badge) {
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    }
+
+    // 6. Hàm hiển thị thông báo "Toast"
+    function showToast(message, type = 'success') {
+        const toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast-notification ${type}`;
+        toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i> ${message}`;
+        
+        toastContainer.appendChild(toast);
+
+        // Hiển thị
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 100); 
+
+        // Tự động ẩn sau 3 giây
+        setTimeout(() => {
+            toast.classList.remove('show');
+            // Xóa khỏi DOM sau khi mờ đi
+            setTimeout(() => {
+                if(toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 500); 
+        }, 3000);
+    }
 </script>
 
 

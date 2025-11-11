@@ -1,27 +1,17 @@
 <?php
-// 1. BẮT ĐẦU SESSION VÀ KIỂM TRA BẢO MẬT
-session_start();
-if (!isset($_SESSION['id_nguoi_dung'])) {
-    header("Location: ../dang_nhap.php");
-    exit();
-}
-if ($_SESSION['vai_tro'] !== 'quan_tri') {
-    echo "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Lỗi</title></head><body>";
-    echo "<h1>Lỗi 403: Bạn không có quyền truy cập.</h1><a href='../index.php'>Quay về</a>";
-    echo "</body></html>";
-    exit();
-}
+// 1. ĐẶT TIÊU ĐỀ VÀ GỌI HEADER ADMIN
+$page_title = "Quản lý Sản phẩm";
+require 'dau_trang_quan_tri.php'; 
+// (dau_trang_quan_tri.php đã gọi session_start(), kiem_tra_quan_tri.php, ket_noi_csdl.php,
+// và định nghĩa ROOT_PATH, BASE_URL)
 
-// 2. KẾT NỐI CSDL
-require '../dung_chung/ket_noi_csdl.php';
-
-// 3. KHỞI TẠO BIẾN
+// 2. KHỞI TẠO BIẾN (Từ code gốc của bạn)
 $thong_bao = "";       
 $thong_bao_loi = "";   
 $action = $_GET['action'] ?? 'danh_sach'; 
-$product_data = null; // Giữ dữ liệu khi sửa
+$product_data = null; 
 
-// 4. HÀM HỖ TRỢ TẢI LÊN HÌNH ẢNH
+// 3. HÀM HỖ TRỢ TẢI LÊN HÌNH ẢNH (Từ code gốc của bạn)
 function xu_ly_tai_anh_san_pham($file_input_name, $upload_dir) {
     if (isset($_FILES[$file_input_name]) && $_FILES[$file_input_name]['error'] == 0) {
         $file = $_FILES[$file_input_name];
@@ -44,9 +34,9 @@ function xu_ly_tai_anh_san_pham($file_input_name, $upload_dir) {
     return null; 
 }
 
-// 5. XỬ LÝ LOGIC (CONTROLLER)
+// 4. XỬ LÝ LOGIC (CONTROLLER) (Từ code gốc của bạn)
 
-// --- 5.1. XỬ LÝ POST (THÊM / SỬA) ---
+// --- 4.1. XỬ LÝ POST (THÊM / SỬA) ---
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     $conn->begin_transaction();
@@ -58,7 +48,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $ma_san_pham = $conn->real_escape_string($_POST['ma_san_pham']);
         $mau_sac = $conn->real_escape_string($_POST['mau_sac']);
         
-        // Lấy giá trị từ các trường input (trường ẩn, đã loại bỏ dấu phẩy)
         $gia_ban = (float)$_POST['gia_ban'];
         $gia_goc = !empty($_POST['gia_goc']) ? (float)$_POST['gia_goc'] : null; 
         
@@ -92,13 +81,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $bao_mat = $conn->real_escape_string($_POST['bao_mat']);
 
         // --- Xử lý 5 file ảnh ---
-        $dir_main = '../tai_len/san_pham/';
-        $dir_gallery = '../tai_len/san_pham/gallery/';
+        $dir_main = ROOT_PATH . 'tai_len/san_pham/'; // (SỬA) Dùng ROOT_PATH
+        $dir_gallery = ROOT_PATH . 'tai_len/san_pham/gallery/'; // (SỬA) Dùng ROOT_PATH
+        
         $anh_dai_dien_hien_tai = $_POST['anh_dai_dien_hien_tai'] ?? '';
         $anh_phu_1_hien_tai = $_POST['anh_phu_1_hien_tai'] ?? '';
         $anh_phu_2_hien_tai = $_POST['anh_phu_2_hien_tai'] ?? '';
         $anh_phu_3_hien_tai = $_POST['anh_phu_3_hien_tai'] ?? '';
         $anh_phu_4_hien_tai = $_POST['anh_phu_4_hien_tai'] ?? '';
+        
         $ten_anh_dai_dien = xu_ly_tai_anh_san_pham('anh_dai_dien', $dir_main) ?? $anh_dai_dien_hien_tai;
         $ten_anh_phu_1 = xu_ly_tai_anh_san_pham('anh_phu_1', $dir_gallery) ?? $anh_phu_1_hien_tai;
         $ten_anh_phu_2 = xu_ly_tai_anh_san_pham('anh_phu_2', $dir_gallery) ?? $anh_phu_2_hien_tai;
@@ -183,7 +174,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-// --- 5.2. XỬ LÝ GET (Xóa) ---
+// --- 4.2. XỬ LÝ GET (Xóa) ---
 if ($action == 'xoa' && isset($_GET['id'])) {
     $id = (int)$_GET['id'];
     
@@ -202,11 +193,12 @@ if ($action == 'xoa' && isset($_GET['id'])) {
     if ($stmt->execute()) {
         $thong_bao = "Đã xóa sản phẩm thành công!";
         if ($images) {
-            if ($images['anh_dai_dien']) @unlink('../tai_len/san_pham/' . $images['anh_dai_dien']);
-            if ($images['anh_phu_1']) @unlink('../tai_len/san_pham/gallery/' . $images['anh_phu_1']);
-            if ($images['anh_phu_2']) @unlink('../tai_len/san_pham/gallery/' . $images['anh_phu_2']);
-            if ($images['anh_phu_3']) @unlink('../tai_len/san_pham/gallery/' . $images['anh_phu_3']);
-            if ($images['anh_phu_4']) @unlink('../tai_len/san_pham/gallery/' . $images['anh_phu_4']);
+            // (SỬA) Dùng ROOT_PATH
+            if ($images['anh_dai_dien']) @unlink(ROOT_PATH . 'tai_len/san_pham/' . $images['anh_dai_dien']);
+            if ($images['anh_phu_1']) @unlink(ROOT_PATH . 'tai_len/san_pham/gallery/' . $images['anh_phu_1']);
+            if ($images['anh_phu_2']) @unlink(ROOT_PATH . 'tai_len/san_pham/gallery/' . $images['anh_phu_2']);
+            if ($images['anh_phu_3']) @unlink(ROOT_PATH . 'tai_len/san_pham/gallery/' . $images['anh_phu_3']);
+            if ($images['anh_phu_4']) @unlink(ROOT_PATH . 'tai_len/san_pham/gallery/' . $images['anh_phu_4']);
         }
     } else {
         $thong_bao_loi = "Lỗi khi xóa: " . $stmt->error;
@@ -214,7 +206,7 @@ if ($action == 'xoa' && isset($_GET['id'])) {
     $action = 'danh_sach'; 
 }
 
-// --- 5.3. XỬ LÝ GET (Lấy dữ liệu cho form Sửa) ---
+// --- 4.3. XỬ LÝ GET (Lấy dữ liệu cho form Sửa) ---
 if ($action == 'sua' && isset($_GET['id'])) {
     if (!$product_data) { 
         $id = (int)$_GET['id'];
@@ -235,20 +227,19 @@ if ($action == 'sua' && isset($_GET['id'])) {
     }
 }
 
-// --- 5.4. LẤY DỮ LIỆU CHO DANH SÁCH (action = 'danh_sach') ---
+// --- 4.4. LẤY DỮ LIỆU CHO DANH SÁCH (action = 'danh_sach') ---
 $list_san_pham = [];
 $distinct_specs = [];
 $search_params_get = []; 
 
 if ($action == 'danh_sach') {
     
-    // 5.4.1. LẤY DỮ LIỆU LỌC ĐỘNG
+    // (Logic lấy dữ liệu lọc động giữ nguyên)
     $spec_columns = [
         'man_hinh', 'do_phan_giai', 'tan_so_quet', 'chip_xu_ly', 'gpu', 'ram', 'rom', 
         'he_dieu_hanh', 'camera_sau', 'camera_truoc', 'dung_luong_pin', 'sac', 'ket_noi', 
         'sim', 'trong_luong', 'chat_lieu', 'khang_nuoc_bui', 'bao_mat'
     ];
-    
     foreach ($spec_columns as $col) {
         $distinct_specs[$col] = [];
         $sql_distinct = "SELECT DISTINCT `$col` FROM thong_so_ky_thuat WHERE `$col` IS NOT NULL AND `$col` != '' ORDER BY `$col` ASC";
@@ -260,7 +251,7 @@ if ($action == 'danh_sach') {
         }
     }
     
-    // 5.4.2. XỬ LÝ DỮ LIỆU TÌM KIẾM ĐẦU VÀO
+    // (Logic xử lý dữ liệu tìm kiếm giữ nguyên)
     $sql_list = "SELECT s.id, s.ten_san_pham, s.anh_dai_dien, h.ten_hang, s.mau_sac, s.gia_ban, s.so_luong_ton, s.trang_thai 
                  FROM san_pham s 
                  LEFT JOIN hang_san_xuat h ON s.id_hang = h.id_hang 
@@ -296,7 +287,6 @@ if ($action == 'danh_sach') {
         $params[] = (float)$_GET['search_max_price']; $param_types .= "d";
         $search_params_get['search_max_price'] = (float)$_GET['search_max_price'];
     }
-    
     foreach ($spec_columns as $col) {
         $get_key = "search_" . $col;
         if (!empty($_GET[$get_key])) {
@@ -307,7 +297,6 @@ if ($action == 'danh_sach') {
         }
     }
     
-    // 5.4.3. GHÉP VÀ THỰC THI CÂU LỆNH
     if (!empty($where_clauses)) {
         $sql_list .= " WHERE " . implode(" AND ", $where_clauses);
     }
@@ -328,7 +317,7 @@ if ($action == 'danh_sach') {
     }
 }
 
-// --- 5.5. LẤY DANH SÁCH HÃNG (cho form Thêm/Sửa) ---
+// --- 4.5. LẤY DANH SÁCH HÃNG (cho form Thêm/Sửa) ---
 $hang_list = [];
 $result_hang = $conn->query("SELECT id_hang, ten_hang FROM hang_san_xuat WHERE trang_thai = 'hien_thi' ORDER BY ten_hang");
 if ($result_hang) {
@@ -337,568 +326,554 @@ if ($result_hang) {
     }
 }
 ?>
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý Sản phẩm</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body, html { font-family: Arial, sans-serif; background-color: #f4f7f6; height: 100%; }
-        .admin-wrapper { display: flex; min-height: 100vh; }
 
-        .sidebar { width: 240px; background-color: #2c3e50; color: white; flex-shrink: 0; }
-        .sidebar-header { padding: 20px; text-align: center; font-size: 20px; font-weight: bold; border-bottom: 1px solid #34495e; }
-        .sidebar-menu { list-style-type: none; }
-        .sidebar-menu li a { display: block; padding: 18px 25px; color: #ecf0f1; text-decoration: none; transition: background-color 0.3s; }
-        .sidebar-menu li.active a { background-color: #34495e; border-left: 3px solid #e74c3c; }
-        .sidebar-menu li a:hover { background-color: #34495e; }
-        .sidebar-menu .back-to-site { margin-top: 30px; }
-        .sidebar-menu .back-to-site a { background-color: #3498db; color: white; font-weight: bold; }
-        .sidebar-menu .back-to-site a:hover { background-color: #2980b9; }
-        .sidebar-menu .logout { margin-top: 10px; }
-        .sidebar-menu .logout a { background-color: #e74c3c; color: white; }
-
-        .main-content { flex-grow: 1; padding: 30px; overflow-y: auto; }
-        .main-content h1 { color: #333; margin-bottom: 20px; }
-        .message { padding: 10px 15px; margin-bottom: 15px; border-radius: 4px; }
-        .message-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .message-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .btn { background-color: #28a745; color: white; padding: 10px 15px; text-decoration: none; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
-        .btn:hover { background-color: #218838; }
-        .btn-secondary { background-color: #6c757d; }
-        .btn-secondary:hover { background-color: #5a6268; }
-
-        .search-form-container { background-color: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .search-form { display: flex; flex-wrap: wrap; gap: 15px 20px; }
-        .search-form h4 { width: 100%; margin: 0 0 5px 0; color: #555; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        .search-group { flex: 1 1 200px; min-width: 200px; }
-        .search-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
-        .search-group input[type="text"],
-        .search-group input[type="number"],
-        .search-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; }
-        .search-actions { width: 100%; display: flex; gap: 10px; padding-top: 10px; margin-top: 10px; border-top: 1px solid #eee; }
-
-        table { width: 100%; border-collapse: collapse; box-shadow: 0 2px 5px rgba(0,0,0,0.1); background: #fff; }
-        table th, table td { border: 1px solid #ddd; padding: 12px 15px; text-align: left; vertical-align: middle; }
-        table th { background-color: #f2f2f2; font-weight: bold; color: #333; }
-        .image-cell { width: 100px; text-align: center; }
-        .image-cell img { max-width: 80px; max-height: 80px; object-fit: contain; }
-        .status { padding: 4px 8px; border-radius: 4px; color: white; font-size: 12px; font-weight: bold; }
-        .status-hiện { background-color: #28a745; }
-        .status-ẩn { background-color: #6c757d; }
-        .status-hết_hàng { background-color: #dc3545; }
-        .action-links a { text-decoration: none; margin-right: 10px; }
-        .action-links a.edit { color: #007bff; }
-        .action-links a.delete { color: #dc3545; }
-
-        .form-container { background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .form-fieldset { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-        .form-fieldset legend { font-size: 1.1em; font-weight: bold; color: #2c3e50; padding: 0 10px; }
-        
-        /* === CSS GRID ĐÃ SỬA (FIX LỖI RESPONSIVE) === */
-        .form-grid, .form-grid-price { 
-            display: grid; 
-            /* Tự động chia cột:
-              - Tạo các cột có chiều rộng tối thiểu 300px.
-              - Nếu đủ chỗ, nó sẽ tạo 2, 3, hoặc 4 cột (1fr).
-              - Nếu không đủ chỗ (như khi zoom 40%), nó sẽ tự động thành 1 cột.
-            */
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px; 
-        }
-        .form-grid-gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-        }
-        /* === HẾT PHẦN SỬA CSS === */
-
+<style>
+    /* Form chung */
         .form-group { margin-bottom: 15px; }
-        .form-group.full-width { grid-column: 1 / -1; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
         .form-group input[type="text"],
-        .form-group input[type="number"],
-        .form-group input[type="date"], 
+        .form-group input[type="email"],
+        .form-group input[type="password"],
         .form-group input[type="file"],
+        .form-group input[type="date"],
+        .form-group input[type="number"], /* === THÊM DÒNG NÀY === */
         .form-group select,
         .form-group textarea {
-            width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box; /* Thêm box-sizing */
         }
-        .form-group textarea { min-height: 100px; resize: vertical; }
-        .form-group textarea.large { min-height: 250px; }
-        .form-actions { margin-top: 20px; display: flex; gap: 10px; }
-        .image-preview { max-width: 150px; max-height: 150px; object-fit: contain; border: 1px solid #ddd; margin-bottom: 10px; display: block; }
-    </style>
-</head>
-<body>
-    <div class="admin-wrapper">
-        <?php require 'menu_quan_tri.php'; ?>
+        .form-group input[disabled], .form-group select[disabled] { background-color: #eee; }
+    /* (Xóa CSS chung, chỉ giữ lại CSS riêng) */
+    .search-form-container { 
+        background-color: #fff; 
+        padding: 20px; 
+        border-radius: 8px; 
+        margin-bottom: 20px; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+    }
+    .search-form { 
+        display: flex; 
+        flex-wrap: wrap; 
+        gap: 15px 20px; 
+    }
+    .search-form h4 { 
+        width: 100%; 
+        margin: 0 0 5px 0; 
+        color: #555; 
+        font-size: 1rem; 
+        border-bottom: 1px solid #eee; 
+        padding-bottom: 5px; 
+    }
+    .search-group { 
+        flex: 1 1 200px; 
+        min-width: 200px; 
+    }
+    .search-group label { 
+        display: block; 
+        margin-bottom: 5px; 
+        font-weight: 600; 
+        font-size: 0.9rem; 
+    }
+    .search-group input[type="text"],
+    .search-group input[type="number"],
+    .search-group select { 
+        width: 100%; 
+        padding: 8px; 
+        border: 1px solid #ccc; 
+        border-radius: 4px; 
+        font-size: 0.9rem; 
+    }
+    .search-actions { 
+        width: 100%; 
+        display: flex; 
+        gap: 10px; 
+        padding-top: 10px; 
+        margin-top: 10px; 
+        border-top: 1px solid #eee; 
+    }
 
-        <main class="main-content">
-            <?php if (!empty($thong_bao)): ?>
-                <div class="message message-success"><?php echo $thong_bao; ?></div>
-            <?php endif; ?>
-            <?php if (!empty($thong_bao_loi)): ?>
-                <div class="message message-error"><?php echo $thong_bao_loi; ?></div>
-            <?php endif; ?>
+    /* CSS Bảng */
+    .image-cell { width: 100px; text-align: center; }
+    .image-cell img { 
+        max-width: 80px; 
+        max-height: 80px; 
+        object-fit: contain; 
+        border-radius: 5px; 
+        border: 1px solid #eee;
+    }
+    .status-hiện { background-color: #28a745; }
+    .status-ẩn { background-color: #6c757d; }
+    .status-hết_hàng { background-color: #dc3545; }
+    
+    /* CSS Nút hành động (đã có trong CSS chung) */
+    /* .action-links a { ... } */
 
-            <?php if ($action == 'danh_sach'): ?>
-                
-                <div class="page-header">
-                    <h1>Quản lý Sản phẩm</h1>
-                    <a href="?action=them" class="btn">Thêm Sản Phẩm Mới</a>
-                </div>
+    /* CSS Form Thêm/Sửa */
+    .form-container { 
+        background: #fff; 
+        padding: 25px; 
+        border-radius: 8px; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+    }
+    .form-fieldset { 
+        border: 1px solid #ddd; 
+        border-radius: 8px; 
+        padding: 20px; 
+        margin-bottom: 20px; 
+    }
+    .form-fieldset legend { 
+        font-size: 1.1em; 
+        font-weight: bold; 
+        color: #2c3e50; 
+        padding: 0 10px; 
+    }
+    
+    .form-grid, .form-grid-price { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px; 
+    }
+    .form-grid-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+    }
 
-                <div class="search-form-container">
-                    <form action="quan_ly_san_pham.php" method="GET" class="search-form">
-                        <input type="hidden" name="action" value="danh_sach">
-                        
-                        <div class="search-group">
-                            <label for="search_keyword">Từ khóa (Tên, Mã SP):</label>
-                            <input type="text" id="search_keyword" name="search_keyword" value="<?php echo htmlspecialchars($search_params_get['search_keyword'] ?? ''); ?>">
-                        </div>
-                        <div class="search-group">
-                            <label for="search_hang">Hãng:</label>
-                            <select id="search_hang" name="search_hang">
-                                <option value="">-- Tất cả hãng --</option>
-                                <?php foreach ($hang_list as $hang): ?>
-                                    <option value="<?php echo $hang['id_hang']; ?>" <?php echo (($search_params_get['search_hang'] ?? 0) == $hang['id_hang']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($hang['ten_hang']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="search-group">
-                            <label for="search_trang_thai">Trạng thái:</label>
-                            <select id="search_trang_thai" name="search_trang_thai">
-                                <option value="">-- Tất cả --</option>
-                                <option value="hiện" <?php echo (($search_params_get['search_trang_thai'] ?? '') == 'hiện') ? 'selected' : ''; ?>>Hiện</option>
-                                <option value="ẩn" <?php echo (($search_params_get['search_trang_thai'] ?? '') == 'ẩn') ? 'selected' : ''; ?>>Ẩn</option>
-                                <option value="hết hàng" <?php echo (($search_params_get['search_trang_thai'] ?? '') == 'hết hàng') ? 'selected' : ''; ?>>Hết hàng</option>
-                            </select>
-                        </div>
-                        <div class="search-group">
-                            <label for="search_min_price">Giá từ (VNĐ):</label>
-                            <input type="number" id="search_min_price" name="search_min_price" value="<?php echo htmlspecialchars($search_params_get['search_min_price'] ?? ''); ?>" placeholder="0">
-                        </div>
-                        <div class="search-group">
-                            <label for="search_max_price">Giá đến (VNĐ):</label>
-                            <input type="number" id="search_max_price" name="search_max_price" value="<?php echo htmlspecialchars($search_params_get['search_max_price'] ?? ''); ?>" placeholder="100000000">
-                        </div>
-                        
-                        <h4>Lọc theo Thông số:</h4>
-                        
-                        <?php 
-                        $spec_labels = [
-                            'man_hinh' => 'Màn hình', 'do_phan_giai' => 'ĐPG', 'tan_so_quet' => 'TS Quét',
-                            'chip_xu_ly' => 'Chip', 'gpu' => 'GPU', 'ram' => 'RAM', 'rom' => 'ROM',
-                            'he_dieu_hanh' => 'HĐH', 'camera_sau' => 'Cam Sau', 'camera_truoc' => 'Cam Trước',
-                            'dung_luong_pin' => 'Pin', 'sac' => 'Sạc', 'ket_noi' => 'Kết nối',
-                            'sim' => 'SIM', 'trong_luong' => 'Tr.Lượng', 'chat_lieu' => 'Chất liệu',
-                            'khang_nuoc_bui' => 'Kháng nước', 'bao_mat' => 'Bảo mật'
-                        ];
-                        
-                        foreach ($spec_columns as $col): 
-                            $get_key = "search_" . $col;
-                            $current_val = $search_params_get[$get_key] ?? '';
-                            $label = $spec_labels[$col] ?? $col; 
-                        ?>
-                            <div class="search-group">
-                                <label for="<?php echo $get_key; ?>"><?php echo $label; ?>:</label>
-                                <select id="<?php echo $get_key; ?>" name="<?php echo $get_key; ?>">
-                                    <option value="">-- Chọn --</option>
-                                    <?php foreach ($distinct_specs[$col] as $value): ?>
-                                        <option value="<?php echo htmlspecialchars($value); ?>" <?php echo ($current_val == $value) ? 'selected' : ''; ?>>
-                                            <?php echo htmlspecialchars($value); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
+    .form-group { margin-bottom: 0; } /* Bỏ margin-bottom vì đã có gap */
+    .form-group.full-width { grid-column: 1 / -1; }
+    .form-group label { 
+        /* Label đã có trong CSS chung */
+    }
+    .form-group textarea { 
+        min-height: 100px; 
+        resize: vertical; 
+    }
+    .form-group textarea.large { 
+        min-height: 250px; 
+    }
+    .form-actions { 
+        margin-top: 20px; 
+        display: flex; 
+        gap: 10px; 
+    }
+    .image-preview { 
+        max-width: 150px; 
+        max-height: 150px; 
+        object-fit: contain; 
+        border: 1px solid #ddd; 
+        margin-bottom: 10px; 
+        display: block; 
+        border-radius: 5px;
+    }
+</style>
+
+<?php if (!empty($thong_bao)): ?>
+    <div class="message success"><?php echo $thong_bao; ?></div>
+<?php endif; ?>
+<?php if (!empty($thong_bao_loi)): ?>
+    <div class="message error"><?php echo $thong_bao_loi; ?></div>
+<?php endif; ?>
+
+<?php if ($action == 'danh_sach'): ?>
+    
+    <div class="page-header">
+        <h1>Quản lý Sản phẩm</h1>
+        <a href="?action=them" class="btn btn-success"><i class="fas fa-plus"></i> Thêm Sản Phẩm Mới</a>
+    </div>
+
+    <div class="search-form-container">
+        <form action="quan_ly_san_pham.php" method="GET" class="search-form">
+            <input type="hidden" name="action" value="danh_sach">
+            
+            <div class="search-group">
+                <label for="search_keyword">Từ khóa (Tên, Mã SP):</label>
+                <input type="text" id="search_keyword" name="search_keyword" value="<?php echo htmlspecialchars($search_params_get['search_keyword'] ?? ''); ?>">
+            </div>
+            <div class="search-group">
+                <label for="search_hang">Hãng:</label>
+                <select id="search_hang" name="search_hang">
+                    <option value="">-- Tất cả hãng --</option>
+                    <?php foreach ($hang_list as $hang): ?>
+                        <option value="<?php echo $hang['id_hang']; ?>" <?php echo (($search_params_get['search_hang'] ?? 0) == $hang['id_hang']) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($hang['ten_hang']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="search-group">
+                <label for="search_trang_thai">Trạng thái:</label>
+                <select id="search_trang_thai" name="search_trang_thai">
+                    <option value="">-- Tất cả --</option>
+                    <option value="hiện" <?php echo (($search_params_get['search_trang_thai'] ?? '') == 'hiện') ? 'selected' : ''; ?>>Hiện</option>
+                    <option value="ẩn" <?php echo (($search_params_get['search_trang_thai'] ?? '') == 'ẩn') ? 'selected' : ''; ?>>Ẩn</option>
+                    <option value="hết hàng" <?php echo (($search_params_get['search_trang_thai'] ?? '') == 'hết hàng') ? 'selected' : ''; ?>>Hết hàng</option>
+                </select>
+            </div>
+            <div class="search-group">
+                <label for="search_min_price">Giá từ (VNĐ):</label>
+                <input type="number" id="search_min_price" name="search_min_price" value="<?php echo htmlspecialchars($search_params_get['search_min_price'] ?? ''); ?>" placeholder="0">
+            </div>
+            <div class="search-group">
+                <label for="search_max_price">Giá đến (VNĐ):</label>
+                <input type="number" id="search_max_price" name="search_max_price" value="<?php echo htmlspecialchars($search_params_get['search_max_price'] ?? ''); ?>" placeholder="100000000">
+            </div>
+            
+            <h4>Lọc theo Thông số:</h4>
+            
+            <?php 
+            $spec_labels = [
+                'man_hinh' => 'Màn hình', 'do_phan_giai' => 'ĐPG', 'tan_so_quet' => 'TS Quét',
+                'chip_xu_ly' => 'Chip', 'gpu' => 'GPU', 'ram' => 'RAM', 'rom' => 'ROM',
+                'he_dieu_hanh' => 'HĐH', 'camera_sau' => 'Cam Sau', 'camera_truoc' => 'Cam Trước',
+                'dung_luong_pin' => 'Pin', 'sac' => 'Sạc', 'ket_noi' => 'Kết nối',
+                'sim' => 'SIM', 'trong_luong' => 'Tr.Lượng', 'chat_lieu' => 'Chất liệu',
+                'khang_nuoc_bui' => 'Kháng nước', 'bao_mat' => 'Bảo mật'
+            ];
+            
+            foreach ($spec_columns as $col): 
+                $get_key = "search_" . $col;
+                $current_val = $search_params_get[$get_key] ?? '';
+                $label = $spec_labels[$col] ?? $col; 
+            ?>
+                <div class="search-group">
+                    <label for="<?php echo $get_key; ?>"><?php echo $label; ?>:</label>
+                    <select id="<?php echo $get_key; ?>" name="<?php echo $get_key; ?>">
+                        <option value="">-- Chọn --</option>
+                        <?php foreach ($distinct_specs[$col] as $value): ?>
+                            <option value="<?php echo htmlspecialchars($value); ?>" <?php echo ($current_val == $value) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($value); ?>
+                            </option>
                         <?php endforeach; ?>
-
-                        <div class="search-actions">
-                            <button type="submit" class="btn">Tìm kiếm</button>
-                            <a href="quan_ly_san_pham.php?action=danh_sach" class="btn btn-secondary">Xóa lọc</a>
-                        </div>
-                    </form>
+                    </select>
                 </div>
+            <?php endforeach; ?>
 
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Ảnh</th>
-                            <th>Tên Sản Phẩm</th>
-                            <th>Hãng</th>
-                            <th>Giá Bán</th>
-                            <th>Tồn Kho</th>
-                            <th>Trạng Thái</th>
-                            <th>Hành Động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($list_san_pham)): ?>
-                            <tr>
-                                <td colspan="9" style="text-align: center;">Không tìm thấy sản phẩm nào.</td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach($list_san_pham as $sp): ?>
-                                <tr>
-                                    <td><?php echo $sp['id']; ?></td>
-                                    <td class="image-cell">
-                                        <?php 
-                                        $anh_path = '../tai_len/san_pham/' . ($sp['anh_dai_dien'] ?? 'default.png');
-                                        if (empty($sp['anh_dai_dien']) || !file_exists($anh_path)) {
-                                            $anh_path = '../tai_len/san_pham/default.png'; 
-                                        }
-                                        ?>
-                                        <img src="<?php echo $anh_path; ?>" alt="<?php echo htmlspecialchars($sp['ten_san_pham']); ?>">
-                                    </td>
-                                    <td><strong><?php echo htmlspecialchars($sp['ten_san_pham']); ?></strong></td>
-                                    <td><?php echo htmlspecialchars($sp['ten_hang']); ?></td>
-                                    <td><?php echo number_format($sp['gia_ban'], 0, ',', '.'); ?>đ</td>
-                                    <td><?php echo $sp['so_luong_ton']; ?></td>
-                                    <td>
-                                        <?php
-                                            $status_class = 'status-' . str_replace(' ', '_', $sp['trang_thai']);
-                                            echo "<span class='status $status_class'>" . htmlspecialchars($sp['trang_thai']) . "</span>";
-                                        ?>
-                                    </td>
-                                    <td class="action-links">
-                                        <a href="?action=sua&id=<?php echo $sp['id']; ?>" class="edit">Sửa</a>
-                                        <a href="?action=xoa&id=<?php echo $sp['id']; ?>" 
-                                           class="delete" 
-                                           onclick="return confirm('Bạn có chắc chắn muốn XÓA sản phẩm này?');">Xóa</a>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            
-            <?php elseif ($action == 'them' || $action == 'sua'): ?>
-                
-                <?php
-                    $is_editing = ($action == 'sua' && $product_data);
-                    
-                    $edit_id = $product_data['id_san_pham'] ?? null;
-                    $edit_ten = $product_data['ten_san_pham'] ?? '';
-                    $edit_id_hang = $product_data['id_hang'] ?? 0;
-                    $edit_ma_sp = $product_data['ma_san_pham'] ?? '';
-                    $edit_mau_sac = $product_data['mau_sac'] ?? '';
-                    $edit_gia_ban = $product_data['gia_ban'] ?? '';
-                    $edit_gia_goc = $product_data['gia_goc'] ?? '';
-                    $edit_so_luong_ton = $product_data['so_luong_ton'] ?? 0;
-                    $edit_trang_thai = $product_data['trang_thai'] ?? 'hiện';
-                    $edit_mo_ta_ngan = $product_data['mo_ta_ngan'] ?? '';
-                    $edit_mo_ta_chi_tiet = $product_data['mo_ta_chi_tiet'] ?? '';
-                    $edit_anh_dai_dien = $product_data['anh_dai_dien'] ?? '';
-                    $edit_phan_tram_giam = $product_data['phan_tram_giam_gia'] ?? '';
-                    $edit_ngay_bat_dau = $product_data['ngay_bat_dau_giam'] ?? '';
-                    $edit_ngay_ket_thuc = $product_data['ngay_ket_thuc_giam'] ?? '';
-                    $edit_man_hinh = $product_data['man_hinh'] ?? '';
-                    $edit_do_phan_giai = $product_data['do_phan_giai'] ?? '';
-                    $edit_tan_so_quet = $product_data['tan_so_quet'] ?? '';
-                    $edit_chip_xu_ly = $product_data['chip_xu_ly'] ?? '';
-                    $edit_gpu = $product_data['gpu'] ?? '';
-                    $edit_ram = $product_data['ram'] ?? '';
-                    $edit_rom = $product_data['rom'] ?? '';
-                    $edit_he_dieu_hanh = $product_data['he_dieu_hanh'] ?? '';
-                    $edit_camera_sau = $product_data['camera_sau'] ?? '';
-                    $edit_camera_truoc = $product_data['camera_truoc'] ?? '';
-                    $edit_pin = $product_data['dung_luong_pin'] ?? '';
-                    $edit_sac = $product_data['sac'] ?? '';
-                    $edit_ket_noi = $product_data['ket_noi'] ?? '';
-                    $edit_sim = $product_data['sim'] ?? '';
-                    $edit_trong_luong = $product_data['trong_luong'] ?? '';
-                    $edit_chat_lieu = $product_data['chat_lieu'] ?? '';
-                    $edit_khang_nuoc_bui = $product_data['khang_nuoc_bui'] ?? '';
-                    $edit_bao_mat = $product_data['bao_mat'] ?? '';
-                    $edit_anh_phu_1 = $product_data['anh_phu_1'] ?? '';
-                    $edit_anh_phu_2 = $product_data['anh_phu_2'] ?? '';
-                    $edit_anh_phu_3 = $product_data['anh_phu_3'] ?? '';
-                    $edit_anh_phu_4 = $product_data['anh_phu_4'] ?? '';
-                ?>
+            <div class="search-actions">
+                <button type="submit" class="btn"><i class="fas fa-filter"></i> Tìm kiếm</button>
+                <a href="quan_ly_san_pham.php?action=danh_sach" class="btn btn-secondary">Xóa lọc</a>
+            </div>
+        </form>
+    </div>
 
-                <h1><?php echo $is_editing ? 'Sửa Sản Phẩm' : 'Thêm Sản Phẩm Mới'; ?></h1>
-                
-                <div class="form-container">
-                    <form action="quan_ly_san_pham.php" method="POST" enctype="multipart/form-data">
-                        
-                        <?php if ($is_editing): ?>
-                            <input type="hidden" name="id_san_pham" value="<?php echo $edit_id; ?>">
-                        <?php endif; ?>
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Ảnh</th>
+                <th>Tên Sản Phẩm</th>
+                <th>Hãng</th>
+                <th>Giá Bán</th>
+                <th>Tồn Kho</th>
+                <th>Trạng Thái</th>
+                <th>Hành Động</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (empty($list_san_pham)): ?>
+                <tr>
+                    <td colspan="8" style="text-align: center;">Không tìm thấy sản phẩm nào.</td>
+                </tr>
+            <?php else: ?>
+                <?php foreach($list_san_pham as $sp): ?>
+                    <tr>
+                        <td><?php echo $sp['id']; ?></td>
+                        <td class="image-cell">
+                            <?php 
+                            // (SỬA) Dùng ROOT_PATH và BASE_URL
+                            $anh_path_relative = 'tai_len/san_pham/' . ($sp['anh_dai_dien'] ?? 'default.png');
+                            if (empty($sp['anh_dai_dien']) || !file_exists(ROOT_PATH . $anh_path_relative)) {
+                                $anh_path_relative = 'tai_len/san_pham/default.png'; 
+                            }
+                            ?>
+                            <img src="<?php echo BASE_URL . $anh_path_relative; ?>" alt="<?php echo htmlspecialchars($sp['ten_san_pham']); ?>">
+                        </td>
+                        <td><strong><?php echo htmlspecialchars($sp['ten_san_pham']); ?></strong></td>
+                        <td><?php echo htmlspecialchars($sp['ten_hang']); ?></td>
+                        <td><?php echo number_format($sp['gia_ban'], 0, ',', '.'); ?>đ</td>
+                        <td><?php echo $sp['so_luong_ton']; ?></td>
+                        <td>
+                            <?php
+                                $status_class = 'status-' . str_replace(' ', '_', $sp['trang_thai']);
+                                echo "<span class='status-label $status_class'>" . htmlspecialchars($sp['trang_thai']) . "</span>";
+                            ?>
+                        </td>
+                        <td class="action-links">
+                            <a href="?action=sua&id=<?php echo $sp['id']; ?>" class="edit"><i class="fas fa-edit"></i> Sửa</a>
+                            <a href="?action=xoa&id=<?php echo $sp['id']; ?>" 
+                               class="delete" 
+                               onclick="return confirm('Bạn có chắc chắn muốn XÓA sản phẩm này?');"><i class="fas fa-trash-alt"></i> Xóa</a>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </tbody>
+    </table>
 
-                        <fieldset class="form-fieldset">
-                            <legend>Thông tin cơ bản</legend>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label for="ten_san_pham">Tên Sản Phẩm (*)</label>
-                                    <input type="text" id="ten_san_pham" name="ten_san_pham" value="<?php echo htmlspecialchars($edit_ten); ?>" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="id_hang">Hãng Sản Xuất (*)</label>
-                                    <select id="id_hang" name="id_hang" required>
-                                        <option value="">-- Chọn hãng --</option>
-                                        <?php foreach ($hang_list as $hang): ?>
-                                            <option value="<?php echo $hang['id_hang']; ?>" <?php echo ($hang['id_hang'] == $edit_id_hang) ? 'selected' : ''; ?>>
-                                                <?php echo htmlspecialchars($hang['ten_hang']); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="ma_san_pham">Mã Sản Phẩm (SKU)</label>
-                                    <input type="text" id="ma_san_pham" name="ma_san_pham" value="<?php echo htmlspecialchars($edit_ma_sp); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label for="mau_sac">Màu Sắc (*)</label>
-                                    <input type="text" id="mau_sac" name="mau_sac" value="<?php echo htmlspecialchars($edit_mau_sac); ?>" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="so_luong_ton">Số Lượng Tồn Kho (*)</label>
-                                    <input type="number" id="so_luong_ton" name="so_luong_ton" value="<?php echo htmlspecialchars($edit_so_luong_ton); ?>" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="trang_thai">Trạng thái (*)</label>
-                                    <select id="trang_thai" name="trang_thai" required>
-                                        <option value="hiện" <?php echo ($edit_trang_thai == 'hiện') ? 'selected' : ''; ?>>Hiển thị</option>
-                                        <option value="ẩn" <?php echo ($edit_trang_thai == 'ẩn') ? 'selected' : ''; ?>>Ẩn</option>
-                                        <option value="hết hàng" <?php echo ($edit_trang_thai == 'hết hàng') ? 'selected' : ''; ?>>Hết hàng</option>
-                                    </select>
-                                </div>
-                                <div class="form-group full-width">
-                                    <label for="anh_dai_dien">Ảnh Đại Diện</label>
-                                    <?php if ($is_editing && $edit_anh_dai_dien && file_exists('../tai_len/san_pham/' . $edit_anh_dai_dien)): ?>
-                                        <img src="../tai_len/san_pham/<?php echo $edit_anh_dai_dien; ?>" alt="Ảnh hiện tại" class="image-preview">
-                                    <?php endif; ?>
-                                    <input type="hidden" name="anh_dai_dien_hien_tai" value="<?php echo htmlspecialchars($edit_anh_dai_dien); ?>">
-                                    <input type="file" id="anh_dai_dien" name="anh_dai_dien">
-                                </div>
-                            </div>
-                        </fieldset>
-
-                        <fieldset class="form-fieldset">
-                            <legend>Giá & Khuyến mãi</legend>
-                            <div class="form-grid-price"> <div class="form-group">
-                                    <label for="gia_goc_display">Giá Gốc (Giá thị trường)</label>
-                                    <input type="text" id="gia_goc_display" 
-                                           value="<?php echo !empty($edit_gia_goc) ? number_format($edit_gia_goc, 0, ',', ',') : ''; ?>" 
-                                           placeholder="Bỏ trống nếu không có" inputmode="numeric">
-                                    <input type="hidden" id="gia_goc" name="gia_goc" value="<?php echo htmlspecialchars($edit_gia_goc); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label for="gia_ban_display">Giá Bán (*)</label>
-                                    <input type="text" id="gia_ban_display" 
-                                           value="<?php echo !empty($edit_gia_ban) ? number_format($edit_gia_ban, 0, ',', ',') : '0'; ?>" 
-                                           required inputmode="numeric">
-                                    <input type="hidden" id="gia_ban" name="gia_ban" value="<?php echo htmlspecialchars($edit_gia_ban); ?>" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="phan_tram_giam_gia">Phần trăm giảm (%)</label>
-                                    <input type="number" id="phan_tram_giam_gia" name="phan_tram_giam_gia" value="<?php echo htmlspecialchars($edit_phan_tram_giam); ?>" min="0" max="100">
-                                </div>
-                            </div>
-                            <div class="form-grid"> <div class="form-group">
-                                    <label for="ngay_bat_dau_giam">Ngày bắt đầu giảm</label>
-                                    <input type="date" id="ngay_bat_dau_giam" name="ngay_bat_dau_giam" value="<?php echo htmlspecialchars($edit_ngay_bat_dau); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label for="ngay_ket_thuc_giam">Ngày kết thúc giảm</label>
-                                    <input type="date" id="ngay_ket_thuc_giam" name="ngay_ket_thuc_giam" value="<?php echo htmlspecialchars($edit_ngay_ket_thuc); ?>">
-                                </div>
-                            </div>
-                        </fieldset>
-
-                        <fieldset class="form-fieldset">
-                            <legend>Thông số kỹ thuật</legend>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label for="chip_xu_ly">Chip Xử Lý (*)</label>
-                                    <input type="text" id="chip_xu_ly" name="chip_xu_ly" value="<?php echo htmlspecialchars($edit_chip_xu_ly); ?>" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="he_dieu_hanh">Hệ Điều Hành (*)</label>
-                                    <input type="text" id="he_dieu_hanh" name="he_dieu_hanh" value="<?php echo htmlspecialchars($edit_he_dieu_hanh); ?>" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="ram">RAM (*)</label>
-                                    <input type="text" id="ram" name="ram" value="<?php echo htmlspecialchars($edit_ram); ?>" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="rom">ROM (*)</label>
-                                    <input type="text" id="rom" name="rom" value="<?php echo htmlspecialchars($edit_rom); ?>" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="man_hinh">Màn hình</label>
-                                    <input type="text" id="man_hinh" name="man_hinh" value="<?php echo htmlspecialchars($edit_man_hinh); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label for="do_phan_giai">Độ phân giải</label>
-                                    <input type="text" id="do_phan_giai" name="do_phan_giai" value="<?php echo htmlspecialchars($edit_do_phan_giai); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label for="tan_so_quet">Tần số quét</label>
-                                    <input type="text" id="tan_so_quet" name="tan_so_quet" value="<?php echo htmlspecialchars($edit_tan_so_quet); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label for="gpu">GPU</label>
-                                    <input type="text" id="gpu" name="gpu" value="<?php echo htmlspecialchars($edit_gpu); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label for="camera_sau">Camera Sau</label>
-                                    <input type="text" id="camera_sau" name="camera_sau" value="<?php echo htmlspecialchars($edit_camera_sau); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label for="camera_truoc">Camera Trước</label>
-                                    <input type="text" id="camera_truoc" name="camera_truoc" value="<?php echo htmlspecialchars($edit_camera_truoc); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label for="dung_luong_pin">Dung lượng Pin</label>
-                                    <input type="text" id="dung_luong_pin" name="dung_luong_pin" value="<?php echo htmlspecialchars($edit_pin); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label for="sac">Sạc</label>
-                                    <input type="text" id="sac" name="sac" value="<?php echo htmlspecialchars($edit_sac); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label for="sim">SIM</label>
-                                    <input type="text" id="sim" name="sim" value="<?php echo htmlspecialchars($edit_sim); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label for="ket_noi">Kết nối</label>
-                                    <input type="text" id="ket_noi" name="ket_noi" value="<?php echo htmlspecialchars($edit_ket_noi); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label for="trong_luong">Trọng lượng</label>
-                                    <input type="text" id="trong_luong" name="trong_luong" value="<?php echo htmlspecialchars($edit_trong_luong); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label for="chat_lieu">Chất liệu</label>
-                                    <input type="text" id="chat_lieu" name="chat_lieu" value="<?php echo htmlspecialchars($edit_chat_lieu); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label for="khang_nuoc_bui">Kháng nước, bụi</label>
-                                    <input type="text" id="khang_nuoc_bui" name="khang_nuoc_bui" value="<?php echo htmlspecialchars($edit_khang_nuoc_bui); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label for="bao_mat">Bảo mật</label>
-                                    <input type="text" id="bao_mat" name="bao_mat" value="<?php echo htmlspecialchars($edit_bao_mat); ?>">
-                                </div>
-                            </div>
-                        </fieldset>
-
-                        <fieldset class="form-fieldset">
-                            <legend>Mô tả sản phẩm</legend>
-                            <div class="form-group">
-                                <label for="mo_ta_ngan">Mô tả ngắn</label>
-                                <textarea id="mo_ta_ngan" name="mo_ta_ngan"><?php echo htmlspecialchars($edit_mo_ta_ngan); ?></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label for="mo_ta_chi_tiet">Mô tả chi tiết</label>
-                                <textarea id="mo_ta_chi_tiet" name="mo_ta_chi_tiet" class="large"><?php echo htmlspecialchars($edit_mo_ta_chi_tiet); ?></textarea>
-                            </div>
-                        </fieldset>
-
-                        <fieldset class="form-fieldset">
-                            <legend>Ảnh thư viện (Ảnh phụ)</legend>
-                            <div class="form-grid-gallery">
-                                <div class="form-group">
-                                    <label for="anh_phu_1">Ảnh phụ 1</label>
-                                    <?php if ($is_editing && $edit_anh_phu_1 && file_exists('../tai_len/san_pham/gallery/' . $edit_anh_phu_1)): ?>
-                                        <img src="../tai_len/san_pham/gallery/<?php echo $edit_anh_phu_1; ?>" class="image-preview">
-                                    <?php endif; ?>
-                                    <input type="hidden" name="anh_phu_1_hien_tai" value="<?php echo htmlspecialchars($edit_anh_phu_1); ?>">
-                                    <input type="file" id="anh_phu_1" name="anh_phu_1">
-                                </div>
-                                <div class="form-group">
-                                    <label for="anh_phu_2">Ảnh phụ 2</label>
-                                    <?php if ($is_editing && $edit_anh_phu_2 && file_exists('../tai_len/san_pham/gallery/' . $edit_anh_phu_2)): ?>
-                                        <img src="../tai_len/san_pham/gallery/<?php echo $edit_anh_phu_2; ?>" class="image-preview">
-                                    <?php endif; ?>
-                                    <input type="hidden" name="anh_phu_2_hien_tai" value="<?php echo htmlspecialchars($edit_anh_phu_2); ?>">
-                                    <input type="file" id="anh_phu_2" name="anh_phu_2">
-                                </div>
-                                <div class="form-group">
-                                    <label for="anh_phu_3">Ảnh phụ 3</label>
-                                    <?php if ($is_editing && $edit_anh_phu_3 && file_exists('../tai_len/san_pham/gallery/' . $edit_anh_phu_3)): ?>
-                                        <img src="../tai_len/san_pham/gallery/<?php echo $edit_anh_phu_3; ?>" class="image-preview">
-                                    <?php endif; ?>
-                                    <input type="hidden" name="anh_phu_3_hien_tai" value="<?php echo htmlspecialchars($edit_anh_phu_3); ?>">
-                                    <input type="file" id="anh_phu_3" name="anh_phu_3">
-                                </div>
-                                <div class="form-group">
-                                    <label for="anh_phu_4">Ảnh phụ 4</label>
-                                    <?php if ($is_editing && $edit_anh_phu_4 && file_exists('../tai_len/san_pham/gallery/' . $edit_anh_phu_4)): ?>
-                                        <img src="../tai_len/san_pham/gallery/<?php echo $edit_anh_phu_4; ?>" class="image-preview">
-                                    <?php endif; ?>
-                                    <input type="hidden" name="anh_phu_4_hien_tai" value="<?php echo htmlspecialchars($edit_anh_phu_4); ?>">
-                                    <input type="file" id="anh_phu_4" name="anh_phu_4">
-                                </div>
-                            </div>
-                        </fieldset>
-
-                        <div class="form-actions">
-                            <button type="submit" class="btn">
-                                <?php echo $is_editing ? 'Cập Nhật Sản Phẩm' : 'Lưu (Thêm mới)'; ?>
-                            </button>
-                            <a href="?action=danh_sach" class="btn btn-secondary">Hủy Bỏ</a>
-                        </div>
-                    </form>
-                </div>
-
-            <?php endif; // Đóng if ($action == '...') ?>
-
-        </main>
+<?php elseif ($action == 'them' || $action == 'sua'): ?>
+    
+    <?php
+        // (Logic đổ dữ liệu vào form giữ nguyên)
+        $is_editing = ($action == 'sua' && $product_data);
         
-    </div> <script>
-        // Chờ tài liệu được tải xong
-        document.addEventListener("DOMContentLoaded", function() {
-            
-            // Hàm xóa dấu phẩy
-            function unformatNumber(value) {
-                return value.replace(/,/g, '');
-            }
-            
-            // Hàm thêm dấu phẩy
-            function formatNumber(value) {
-                // Xóa tất cả các ký tự không phải số
-                let rawValue = value.replace(/[^0-9]/g, '');
-                // Thêm dấu phẩy
-                return rawValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            }
-            
-            // Hàm áp dụng cho một input
-            function setupPriceInput(displayId, hiddenId) {
-                const displayInput = document.getElementById(displayId);
-                const hiddenInput = document.getElementById(hiddenId);
-                
-                if (displayInput && hiddenInput) {
-                    // Thêm sự kiện 'input' (khi người dùng gõ)
-                    displayInput.addEventListener('input', function(e) {
-                        // 1. Lấy giá trị thô (xóa dấu phẩy)
-                        let rawValue = unformatNumber(e.target.value);
-                        
-                        // 2. Cập nhật input ẩn (để gửi về server)
-                        hiddenInput.value = rawValue;
-                        
-                        // 3. Định dạng lại giá trị (thêm dấu phẩy)
-                        let formattedValue = formatNumber(rawValue);
-                        
-                        // 4. Cập nhật input hiển thị (cho người dùng xem)
-                        e.target.value = formattedValue;
-                    });
-                }
-            }
-            
-            // Áp dụng cho 2 ô giá
-            setupPriceInput('gia_goc_display', 'gia_goc');
-            setupPriceInput('gia_ban_display', 'gia_ban');
-        });
-    </script>
+        $edit_id = $product_data['id_san_pham'] ?? null;
+        $edit_ten = $product_data['ten_san_pham'] ?? '';
+        $edit_id_hang = $product_data['id_hang'] ?? 0;
+        $edit_ma_sp = $product_data['ma_san_pham'] ?? '';
+        $edit_mau_sac = $product_data['mau_sac'] ?? '';
+        $edit_gia_ban = $product_data['gia_ban'] ?? '';
+        $edit_gia_goc = $product_data['gia_goc'] ?? '';
+        $edit_so_luong_ton = $product_data['so_luong_ton'] ?? 0;
+        $edit_trang_thai = $product_data['trang_thai'] ?? 'hiện';
+        $edit_mo_ta_ngan = $product_data['mo_ta_ngan'] ?? '';
+        $edit_mo_ta_chi_tiet = $product_data['mo_ta_chi_tiet'] ?? '';
+        $edit_anh_dai_dien = $product_data['anh_dai_dien'] ?? '';
+        $edit_phan_tram_giam = $product_data['phan_tram_giam_gia'] ?? '';
+        $edit_ngay_bat_dau = $product_data['ngay_bat_dau_giam'] ?? '';
+        $edit_ngay_ket_thuc = $product_data['ngay_ket_thuc_giam'] ?? '';
+        $edit_man_hinh = $product_data['man_hinh'] ?? '';
+        $edit_do_phan_giai = $product_data['do_phan_giai'] ?? '';
+        $edit_tan_so_quet = $product_data['tan_so_quet'] ?? '';
+        $edit_chip_xu_ly = $product_data['chip_xu_ly'] ?? '';
+        $edit_gpu = $product_data['gpu'] ?? '';
+        $edit_ram = $product_data['ram'] ?? '';
+        $edit_rom = $product_data['rom'] ?? '';
+        $edit_he_dieu_hanh = $product_data['he_dieu_hanh'] ?? '';
+        $edit_camera_sau = $product_data['camera_sau'] ?? '';
+        $edit_camera_truoc = $product_data['camera_truoc'] ?? '';
+        $edit_pin = $product_data['dung_luong_pin'] ?? '';
+        $edit_sac = $product_data['sac'] ?? '';
+        $edit_ket_noi = $product_data['ket_noi'] ?? '';
+        $edit_sim = $product_data['sim'] ?? '';
+        $edit_trong_luong = $product_data['trong_luong'] ?? '';
+        $edit_chat_lieu = $product_data['chat_lieu'] ?? '';
+        $edit_khang_nuoc_bui = $product_data['khang_nuoc_bui'] ?? '';
+        $edit_bao_mat = $product_data['bao_mat'] ?? '';
+        $edit_anh_phu_1 = $product_data['anh_phu_1'] ?? '';
+        $edit_anh_phu_2 = $product_data['anh_phu_2'] ?? '';
+        $edit_anh_phu_3 = $product_data['anh_phu_3'] ?? '';
+        $edit_anh_phu_4 = $product_data['anh_phu_4'] ?? '';
+    ?>
 
-</body>
-</html>
+    <h1><?php echo $is_editing ? 'Sửa Sản Phẩm' : 'Thêm Sản Phẩm Mới'; ?></h1>
+    
+    <div class="form-container">
+        <form action="quan_ly_san_pham.php" method="POST" enctype="multipart/form-data">
+            
+            <?php if ($is_editing): ?>
+                <input type="hidden" name="id_san_pham" value="<?php echo $edit_id; ?>">
+            <?php endif; ?>
+
+            <fieldset class="form-fieldset">
+                <legend>Thông tin cơ bản</legend>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="ten_san_pham">Tên Sản Phẩm (*)</label>
+                        <input type="text" id="ten_san_pham" name="ten_san_pham" value="<?php echo htmlspecialchars($edit_ten); ?>" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_hang">Hãng Sản Xuất (*)</label>
+                        <select id="id_hang" name="id_hang" required>
+                            <option value="">-- Chọn hãng --</option>
+                            <?php foreach ($hang_list as $hang): ?>
+                                <option value="<?php echo $hang['id_hang']; ?>" <?php echo ($hang['id_hang'] == $edit_id_hang) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($hang['ten_hang']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="ma_san_pham">Mã Sản Phẩm (SKU)</label>
+                        <input type="text" id="ma_san_pham" name="ma_san_pham" value="<?php echo htmlspecialchars($edit_ma_sp); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="mau_sac">Màu Sắc (*)</label>
+                        <input type="text" id="mau_sac" name="mau_sac" value="<?php echo htmlspecialchars($edit_mau_sac); ?>" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="so_luong_ton">Số Lượng Tồn Kho (*)</label>
+                        <input type="number" id="so_luong_ton" name="so_luong_ton" value="<?php echo htmlspecialchars($edit_so_luong_ton); ?>" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="trang_thai">Trạng thái (*)</label>
+                        <select id="trang_thai" name="trang_thai" required>
+                            <option value="hiện" <?php echo ($edit_trang_thai == 'hiện') ? 'selected' : ''; ?>>Hiển thị</option>
+                            <option value="ẩn" <?php echo ($edit_trang_thai == 'ẩn') ? 'selected' : ''; ?>>Ẩn</option>
+                            <option value="hết hàng" <?php echo ($edit_trang_thai == 'hết hàng') ? 'selected' : ''; ?>>Hết hàng</option>
+                        </select>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="anh_dai_dien">Ảnh Đại Diện</label>
+                        <?php if ($is_editing && $edit_anh_dai_dien && file_exists(ROOT_PATH . 'tai_len/san_pham/' . $edit_anh_dai_dien)): ?>
+                            <img src="<?php echo BASE_URL; ?>tai_len/san_pham/<?php echo $edit_anh_dai_dien; ?>" alt="Ảnh hiện tại" class="image-preview">
+                        <?php endif; ?>
+                        <input type="hidden" name="anh_dai_dien_hien_tai" value="<?php echo htmlspecialchars($edit_anh_dai_dien); ?>">
+                        <input type="file" id="anh_dai_dien" name="anh_dai_dien">
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="form-fieldset">
+                <legend>Giá & Khuyến mãi</legend>
+                <div class="form-grid-price">
+                    <div class="form-group">
+                        <label for="gia_goc_display">Giá Gốc (Giá thị trường)</label>
+                        <input type="text" id="gia_goc_display" 
+                               value="<?php echo !empty($edit_gia_goc) ? number_format($edit_gia_goc, 0, ',', ',') : ''; ?>" 
+                               placeholder="Bỏ trống nếu không có" inputmode="numeric">
+                        <input type="hidden" id="gia_goc" name="gia_goc" value="<?php echo htmlspecialchars($edit_gia_goc); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="gia_ban_display">Giá Bán (*)</label>
+                        <input type="text" id="gia_ban_display" 
+                               value="<?php echo !empty($edit_gia_ban) ? number_format($edit_gia_ban, 0, ',', ',') : '0'; ?>" 
+                               required inputmode="numeric">
+                        <input type="hidden" id="gia_ban" name="gia_ban" value="<?php echo htmlspecialchars($edit_gia_ban); ?>" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phan_tram_giam_gia">Phần trăm giảm (%)</label>
+                        <input type="number" id="phan_tram_giam_gia" name="phan_tram_giam_gia" value="<?php echo htmlspecialchars($edit_phan_tram_giam); ?>" min="0" max="100">
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="ngay_bat_dau_giam">Ngày bắt đầu giảm</label>
+                        <input type="date" id="ngay_bat_dau_giam" name="ngay_bat_dau_giam" value="<?php echo htmlspecialchars($edit_ngay_bat_dau); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="ngay_ket_thuc_giam">Ngày kết thúc giảm</label>
+                        <input type="date" id="ngay_ket_thuc_giam" name="ngay_ket_thuc_giam" value="<?php echo htmlspecialchars($edit_ngay_ket_thuc); ?>">
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="form-fieldset">
+                <legend>Thông số kỹ thuật</legend>
+                <div class="form-grid">
+                    <div class="form-group"><label for="chip_xu_ly">Chip Xử Lý (*)</label><input type="text" id="chip_xu_ly" name="chip_xu_ly" value="<?php echo htmlspecialchars($edit_chip_xu_ly); ?>" required></div>
+                    <div class="form-group"><label for="he_dieu_hanh">Hệ Điều Hành (*)</label><input type="text" id="he_dieu_hanh" name="he_dieu_hanh" value="<?php echo htmlspecialchars($edit_he_dieu_hanh); ?>" required></div>
+                    <div class="form-group"><label for="ram">RAM (*)</label><input type="text" id="ram" name="ram" value="<?php echo htmlspecialchars($edit_ram); ?>" required></div>
+                    <div class="form-group"><label for="rom">ROM (*)</label><input type="text" id="rom" name="rom" value="<?php echo htmlspecialchars($edit_rom); ?>" required></div>
+                    <div class="form-group"><label for="man_hinh">Màn hình</label><input type="text" id="man_hinh" name="man_hinh" value="<?php echo htmlspecialchars($edit_man_hinh); ?>"></div>
+                    <div class="form-group"><label for="do_phan_giai">Độ phân giải</label><input type="text" id="do_phan_giai" name="do_phan_giai" value="<?php echo htmlspecialchars($edit_do_phan_giai); ?>"></div>
+                    <div class="form-group"><label for="tan_so_quet">Tần số quét</label><input type="text" id="tan_so_quet" name="tan_so_quet" value="<?php echo htmlspecialchars($edit_tan_so_quet); ?>"></div>
+                    <div class="form-group"><label for="gpu">GPU</label><input type="text" id="gpu" name="gpu" value="<?php echo htmlspecialchars($edit_gpu); ?>"></div>
+                    <div class="form-group"><label for="camera_sau">Camera Sau</label><input type="text" id="camera_sau" name="camera_sau" value="<?php echo htmlspecialchars($edit_camera_sau); ?>"></div>
+                    <div class="form-group"><label for="camera_truoc">Camera Trước</label><input type="text" id="camera_truoc" name="camera_truoc" value="<?php echo htmlspecialchars($edit_camera_truoc); ?>"></div>
+                    <div class="form-group"><label for="dung_luong_pin">Dung lượng Pin</label><input type="text" id="dung_luong_pin" name="dung_luong_pin" value="<?php echo htmlspecialchars($edit_pin); ?>"></div>
+                    <div class="form-group"><label for="sac">Sạc</label><input type="text" id="sac" name="sac" value="<?php echo htmlspecialchars($edit_sac); ?>"></div>
+                    <div class="form-group"><label for="sim">SIM</label><input type="text" id="sim" name="sim" value="<?php echo htmlspecialchars($edit_sim); ?>"></div>
+                    <div class="form-group"><label for="ket_noi">Kết nối</label><input type="text" id="ket_noi" name="ket_noi" value="<?php echo htmlspecialchars($edit_ket_noi); ?>"></div>
+                    <div class="form-group"><label for="trong_luong">Trọng lượng</label><input type="text" id="trong_luong" name="trong_luong" value="<?php echo htmlspecialchars($edit_trong_luong); ?>"></div>
+                    <div class="form-group"><label for="chat_lieu">Chất liệu</label><input type="text" id="chat_lieu" name="chat_lieu" value="<?php echo htmlspecialchars($edit_chat_lieu); ?>"></div>
+                    <div class="form-group"><label for="khang_nuoc_bui">Kháng nước, bụi</label><input type="text" id="khang_nuoc_bui" name="khang_nuoc_bui" value="<?php echo htmlspecialchars($edit_khang_nuoc_bui); ?>"></div>
+                    <div class="form-group"><label for="bao_mat">Bảo mật</label><input type="text" id="bao_mat" name="bao_mat" value="<?php echo htmlspecialchars($edit_bao_mat); ?>"></div>
+                </div>
+            </fieldset>
+
+            <fieldset class="form-fieldset">
+                <legend>Mô tả sản phẩm</legend>
+                <div class="form-group">
+                    <label for="mo_ta_ngan">Mô tả ngắn</label>
+                    <textarea id="mo_ta_ngan" name="mo_ta_ngan"><?php echo htmlspecialchars($edit_mo_ta_ngan); ?></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="mo_ta_chi_tiet">Mô tả chi tiết</label>
+                    <textarea id="mo_ta_chi_tiet" name="mo_ta_chi_tiet" class="large"><?php echo htmlspecialchars($edit_mo_ta_chi_tiet); ?></textarea>
+                </div>
+            </fieldset>
+
+            <fieldset class="form-fieldset">
+                <legend>Ảnh thư viện (Ảnh phụ)</legend>
+                <div class="form-grid-gallery">
+                    <div class="form-group">
+                        <label for="anh_phu_1">Ảnh phụ 1</label>
+                        <?php if ($is_editing && $edit_anh_phu_1 && file_exists(ROOT_PATH . 'tai_len/san_pham/gallery/' . $edit_anh_phu_1)): ?>
+                            <img src="<?php echo BASE_URL; ?>tai_len/san_pham/gallery/<?php echo $edit_anh_phu_1; ?>" class="image-preview">
+                        <?php endif; ?>
+                        <input type="hidden" name="anh_phu_1_hien_tai" value="<?php echo htmlspecialchars($edit_anh_phu_1); ?>">
+                        <input type="file" id="anh_phu_1" name="anh_phu_1">
+                    </div>
+                    <div class="form-group">
+                        <label for="anh_phu_2">Ảnh phụ 2</label>
+                        <?php if ($is_editing && $edit_anh_phu_2 && file_exists(ROOT_PATH . 'tai_len/san_pham/gallery/' . $edit_anh_phu_2)): ?>
+                            <img src="<?php echo BASE_URL; ?>tai_len/san_pham/gallery/<?php echo $edit_anh_phu_2; ?>" class="image-preview">
+                        <?php endif; ?>
+                        <input type="hidden" name="anh_phu_2_hien_tai" value="<?php echo htmlspecialchars($edit_anh_phu_2); ?>">
+                        <input type="file" id="anh_phu_2" name="anh_phu_2">
+                    </div>
+                    <div class="form-group">
+                        <label for="anh_phu_3">Ảnh phụ 3</label>
+                        <?php if ($is_editing && $edit_anh_phu_3 && file_exists(ROOT_PATH . 'tai_len/san_pham/gallery/' . $edit_anh_phu_3)): ?>
+                            <img src="<?php echo BASE_URL; ?>tai_len/san_pham/gallery/<?php echo $edit_anh_phu_3; ?>" class="image-preview">
+                        <?php endif; ?>
+                        <input type="hidden" name="anh_phu_3_hien_tai" value="<?php echo htmlspecialchars($edit_anh_phu_3); ?>">
+                        <input type="file" id="anh_phu_3" name="anh_phu_3">
+                    </div>
+                    <div class="form-group">
+                        <label for="anh_phu_4">Ảnh phụ 4</label>
+                        <?php if ($is_editing && $edit_anh_phu_4 && file_exists(ROOT_PATH . 'tai_len/san_pham/gallery/' . $edit_anh_phu_4)): ?>
+                            <img src="<?php echo BASE_URL; ?>tai_len/san_pham/gallery/<?php echo $edit_anh_phu_4; ?>" class="image-preview">
+                        <?php endif; ?>
+                        <input type="hidden" name="anh_phu_4_hien_tai" value="<?php echo htmlspecialchars($edit_anh_phu_4); ?>">
+                        <input type="file" id="anh_phu_4" name="anh_phu_4">
+                    </div>
+                </div>
+            </fieldset>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save"></i> <?php echo $is_editing ? 'Cập Nhật Sản Phẩm' : 'Lưu (Thêm mới)'; ?>
+                </button>
+                <a href="?action=danh_sach" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Hủy Bỏ
+                </a>
+            </div>
+        </form>
+    </div>
+
+<?php endif; // Đóng if ($action == '...') ?>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        
+        // (Logic JS định dạng giá của bạn giữ nguyên)
+        function unformatNumber(value) {
+            return value.replace(/,/g, '');
+        }
+        
+        function formatNumber(value) {
+            let rawValue = value.replace(/[^0-9]/g, '');
+            return rawValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+        
+        function setupPriceInput(displayId, hiddenId) {
+            const displayInput = document.getElementById(displayId);
+            const hiddenInput = document.getElementById(hiddenId);
+            
+            if (displayInput && hiddenInput) {
+                // (MỚI) Định dạng giá trị ban đầu khi tải trang
+                let initialRawValue = hiddenInput.value;
+                if (initialRawValue) {
+                    displayInput.value = formatNumber(initialRawValue);
+                }
+                
+                displayInput.addEventListener('input', function(e) {
+                    let rawValue = unformatNumber(e.target.value);
+                    hiddenInput.value = rawValue;
+                    let formattedValue = formatNumber(rawValue);
+                    e.target.value = formattedValue;
+                });
+            }
+        }
+        
+        setupPriceInput('gia_goc_display', 'gia_goc');
+        setupPriceInput('gia_ban_display', 'gia_ban');
+    });
+</script>
+
+<?php require 'cuoi_trang_quan_tri.php'; ?>

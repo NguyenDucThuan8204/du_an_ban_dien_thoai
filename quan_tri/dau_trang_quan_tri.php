@@ -1,29 +1,35 @@
 <?php
-// 1. BẮT ĐẦU SESSION VÀ KẾT NỐI CSDL
+// 1. BẮT ĐẦU SESSION
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
-// Nếu $conn chưa được tạo (ở file gọi), thì tạo nó
+
+// 2. (MỚI) ĐỊNH NGHĨA ĐƯỜNG DẪN GỐC (SỬA LỖI ROOT_PATH)
+if (!defined('ROOT_PATH')) {
+    define('ROOT_PATH', dirname(__DIR__) . '/');
+}
+
+// 3. (MỚI) ĐỊNH NGHĨA URL GỐC (CHO ẢNH VÀ LINK)
+if (!defined('BASE_URL')) {
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
+    $host = $_SERVER['HTTP_HOST'];
+    $script_name = str_replace('\\', '/', $_SERVER['SCRIPT_NAME']);
+    $project_folder = dirname(dirname($script_name)); 
+    if ($project_folder == '/' || $project_folder == '\\') {
+        $project_folder = ''; 
+    }
+    define('BASE_URL', $protocol . '://' . $host . $project_folder . '/');
+}
+
+// 4. KẾT NỐI CSDL (Dùng ROOT_PATH)
 if (!isset($conn) || !$conn) {
-    require '../dung_chung/ket_noi_csdl.php';
+    require ROOT_PATH . 'dung_chung/ket_noi_csdl.php';
 }
 
-// 2. LẤY SỐ LƯỢNG GIỎ HÀNG (CHO MENU)
-// (Chạy sau khi đã chắc chắn có session và $conn)
-$cart_count = 0;
-if (isset($_SESSION['id_nguoi_dung'])) {
-    $id_nguoi_dung = $_SESSION['id_nguoi_dung'];
-    $sql_count = "SELECT COUNT(id_gio_hang) as total FROM gio_hang WHERE id_nguoi_dung = ?";
-    $stmt_count = $conn->prepare($sql_count);
-    $stmt_count->bind_param("i", $id_nguoi_dung);
-    $stmt_count->execute();
-    $result_count = $stmt_count->get_result();
-    $cart_count = $result_count->fetch_assoc()['total'];
-} elseif (isset($_SESSION['cart'])) {
-    $cart_count = count($_SESSION['cart']);
-}
+// 5. GỌI FILE BẢO VỆ ADMIN
+require_once __DIR__ . '/kiem_tra_quan_tri.php'; 
 
-// 3. LẤY TÊN FILE HIỆN TẠI (ĐỂ ACTIVE MENU)
+// 6. LẤY TÊN FILE HIỆN TẠI
 $current_page = basename($_SERVER['PHP_SELF']);
 ?>
 <!DOCTYPE html>
@@ -144,6 +150,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         /* CSS Tab menu chung */
         .tab-menu {
             display: flex;
+            flex-wrap: wrap; /* Cho phép xuống hàng */
             border-bottom: 2px solid #ccc;
             margin-bottom: 20px;
         }
@@ -167,21 +174,34 @@ $current_page = basename($_SERVER['PHP_SELF']);
             border-bottom-color: #007bff;
         }
         
-        /* Nhãn Trạng Thái */
+        /* (SỬA LỖI) Nhãn Trạng Thái (Đầy đủ) */
         .status-label {
-            padding: 5px 10px; border-radius: 4px; color: white;
-            font-size: 12px; font-weight: bold; text-transform: uppercase;
+            padding: 5px 10px; 
+            border-radius: 4px; 
+            color: white; /* Mặc định chữ trắng */
+            font-size: 12px; 
+            font-weight: bold; 
+            text-transform: uppercase;
         }
+        /* Nền tối (chữ trắng) */
         .status-moi { background-color: #007bff; }
-        .status-da_doc { background-color: #17a2b8; }
-        .status-da_tra_loi { background-color: #28a745; }
-        .status-dang_xu_ly { background-color: #ffc107; color: #333; }
-        .status-da_giai_quyet { background-color: #28a745; }
-        /* Thêm CSS trạng thái người dùng (từ file cũ của bạn) */
+        .status-dang_xu_ly { background-color: #17a2b8; }
+        .status-hoan_thanh { background-color: #28a745; }
+        .status-da_huy { background-color: #dc3545; }
+        .status-da_hoan_tra { background-color: #6c757d; }
+        .status-an { background-color: #6c757d; }
+        .status-hien_thi { background-color: #28a745; }
         .status-hoat_dong { background-color: #28a745; }
         .status-bi_cam { background-color: #dc3545; }
-        .status-cho_xac_minh { background-color: #ffc107; color: #333; }
-
+        
+        /* Nền sáng (chữ đen) */
+        .status-dang_giao { background-color: #ffc107; color: #333 !important; }
+        .status-yeu_cau_huy { background-color: #fd7e14; color: #fff !important; }
+        .status-yeu_cau_tra_hang { background-color: #fd7e14; color: #fff !important; }
+        .status-cho_duyet { background-color: #ffc107; color: #333 !important; }
+        .status-cho_xac_minh { background-color: #ffc107; color: #333 !important; }
+        .status-cho_xac_nhan_thanh_toan { background-color: #fd7e14; color: #fff !important; }
+        
         /* Hành Động */
         .action-links a {
             color: #007bff;
@@ -197,22 +217,38 @@ $current_page = basename($_SERVER['PHP_SELF']);
             text-decoration: underline;
         }
         
-        /* Form chung */
+        /* (SỬA LỖI) Form chung (Đầy đủ) */
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
+        
         .form-group input[type="text"],
         .form-group input[type="email"],
         .form-group input[type="password"],
         .form-group input[type="file"],
+        .form-group input[type="date"],
+        .form-group input[type="number"],
         .form-group select,
-        .form-group textarea {
+        .form-group textarea,
+        /* CSS CHO BỘ LỌC (QUẢN LÝ ĐƠN HÀNG, TIN TỨC, USER) */
+        .filter-group input[type="text"],
+        .filter-group input[type="date"],
+        .filter-group input[type="number"],
+        .filter-group select,
+        /* CSS CHO BỘ LỌC CŨ (QUẢN LÝ SẢN PHẨM) */
+        .search-group input[type="text"],
+        .search-group input[type="number"],
+        .search-group select {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 14px;
+            box-sizing: border-box; /* Quan trọng */
         }
-        .form-group input[disabled], .form-group select[disabled] { background-color: #eee; }
+        
+        .form-group input[disabled], .form-group select[disabled] { 
+            background-color: #eee; 
+        }
         
         /* Thông báo chung */
         .message { padding: 10px 15px; margin-bottom: 15px; border-radius: 4px; }
@@ -238,6 +274,20 @@ $current_page = basename($_SERVER['PHP_SELF']);
         .btn-secondary { background-color: #6c757d; }
         .btn:hover { opacity: 0.9; }
 
+        /* (MỚI) CSS Cho Header Trang (Nút "Thêm Mới") */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .page-header h1, .page-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        
     </style>
 </head>
 <body>

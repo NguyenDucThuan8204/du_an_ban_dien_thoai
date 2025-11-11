@@ -19,7 +19,7 @@ $params = [];
 $types = "";
 
 try {
-    // (MỚI) SQL Lấy thêm tên người đăng
+    // Lấy thêm tên người đăng
     $sql_base = "SELECT 
                     t.id_tin_tuc, t.tieu_de, t.noi_dung_1, t.anh_dai_dien, t.ngay_dang,
                     COALESCE(nd.ten, 'Admin') as ten_nguoi_dang
@@ -67,11 +67,121 @@ try {
 
 // 3. GỌI ĐẦU TRANG (SAU KHI LOGIC ĐÃ XONG)
 require 'dung_chung/dau_trang.php';
+// (Lưu ý: dau_trang.php PHẢI được cập nhật ở Bước 2)
 ?>
+
+<style>
+    /* Tiêu đề trang */
+    .page-header-news {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap; /* Cho responsive */
+        gap: 15px;
+    }
+    
+    /* (CSS cho .filter-container và .filter-group đã có trong dau_trang.php) */
+
+    /* CSS Cho Lưới Tin Tức */
+    .news-grid {
+        display: grid;
+        /* 3 cột, tự động fill */
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+        gap: 30px;
+    }
+    
+    /* CSS Cho Thẻ Tin Tức (Card) */
+    .news-card {
+        background-color: var(--white-color);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        overflow: hidden; 
+        transition: all 0.3s ease;
+        text-decoration: none; 
+        color: var(--dark-color);
+        display: flex;
+        flex-direction: column;
+    }
+    .news-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+    }
+    
+    /* Ảnh */
+    .news-image {
+        width: 100%;
+        height: 220px;
+        object-fit: cover; /* Cắt ảnh vừa khung */
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    /* Nội dung */
+    .news-content {
+        padding: 25px;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    .news-meta {
+        font-size: 0.85rem;
+        color: #777;
+        margin-bottom: 10px;
+    }
+    .news-meta i {
+        margin-right: 5px;
+        color: var(--primary-color);
+    }
+    .news-meta .author {
+        font-weight: 600;
+        color: #555;
+    }
+    
+    .news-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin: 0;
+        /* Giới hạn 2 dòng */
+        height: 3.2em; 
+        line-height: 1.6em;
+        overflow: hidden;
+    }
+    
+    .news-summary {
+        font-size: 0.95rem;
+        color: #555;
+        /* Giới hạn 3 dòng */
+        height: 4.5em; 
+        line-height: 1.5em;
+        overflow: hidden;
+        margin-top: 15px;
+        flex-grow: 1; /* Đẩy phần đọc thêm xuống dưới */
+    }
+    
+    .news-read-more {
+        margin-top: 20px;
+        font-weight: bold;
+        color: var(--primary-color);
+    }
+    .news-read-more i {
+        margin-left: 5px;
+        transition: margin-left 0.2s;
+    }
+    .news-card:hover .news-read-more i {
+        margin-left: 10px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .news-grid {
+            grid-template-columns: 1fr; /* 1 cột */
+        }
+    }
+</style>
 
 <main class="container">
     
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div class="page-header-news">
         <h1 class="section-title" style="margin-bottom: 0;">Tin Tức & Đánh Giá</h1>
         <?php if (isset($_SESSION['id_nguoi_dung'])): ?>
             <a href="viet_bai.php" class="btn btn-success">
@@ -119,12 +229,16 @@ require 'dung_chung/dau_trang.php';
                     ?>
                     <img src="<?php echo $anh_path_news; ?>" alt="<?php echo htmlspecialchars($news_item['tieu_de']); ?>" class="news-image">
                     <div class="news-content">
-                        <div class="news-date">
-                            Đăng bởi <strong><?php echo htmlspecialchars($news_item['ten_nguoi_dang']); ?></strong> 
-                            ngày <?php echo date('d/m/Y', strtotime($news_item['ngay_dang'])); ?>
+                        <div class="news-meta">
+                            <span class="author"><i class="fas fa-user"></i> <?php echo htmlspecialchars($news_item['ten_nguoi_dang']); ?></span>
+                            &nbsp;&nbsp;&nbsp;
+                            <span><i class="fas fa-calendar-alt"></i> <?php echo date('d/m/Y', strtotime($news_item['ngay_dang'])); ?></span>
                         </div>
                         <h3 class="news-title"><?php echo htmlspecialchars($news_item['tieu_de']); ?></h3>
                         <p class="news-summary"><?php echo htmlspecialchars($news_item['noi_dung_1']); ?></p>
+                        <div class="news-read-more">
+                            Đọc thêm <i class="fas fa-arrow-right"></i>
+                        </div>
                     </div>
                 </a>
             <?php endforeach; ?>

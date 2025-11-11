@@ -7,18 +7,22 @@ if (!isset($conn) || !$conn) {
     require 'ket_noi_csdl.php';
 }
 
-// 2. LẤY SỐ LƯỢNG GIỎ HÀNG (CHO MENU)
+// 2. LẤY SỐ LƯỢNG GIỎ HÀNG (SỬA LẠI CÁCH ĐẾM)
 $cart_count = 0;
 if (isset($_SESSION['id_nguoi_dung'])) {
     $id_nguoi_dung = $_SESSION['id_nguoi_dung'];
-    $sql_count = "SELECT COUNT(id_gio_hang) as total FROM gio_hang WHERE id_nguoi_dung = ?";
+    // Đếm TỔNG SỐ LƯỢNG sản phẩm, không phải số dòng
+    $sql_count = "SELECT SUM(so_luong) as total FROM gio_hang WHERE id_nguoi_dung = ?";
     $stmt_count = $conn->prepare($sql_count);
     $stmt_count->bind_param("i", $id_nguoi_dung);
     $stmt_count->execute();
     $result_count = $stmt_count->get_result();
-    $cart_count = $result_count->fetch_assoc()['total'];
+    $cart_count = $result_count->fetch_assoc()['total'] ?? 0;
 } elseif (isset($_SESSION['cart'])) {
-    $cart_count = count($_SESSION['cart']);
+    // Đếm TỔNG SỐ LƯỢNG trong session
+    foreach ($_SESSION['cart'] as $item) {
+        $cart_count += $item['so_luong'];
+    }
 }
 
 // 3. LẤY TÊN FILE HIỆN TẠI (ĐỂ ACTIVE MENU)
@@ -36,7 +40,10 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/turbolinks/5.2.0/turbolinks.js" defer></script>
     
+    <?php if (isset($page_meta_tags)) { echo $page_meta_tags; } ?>
+    
     <style>
+        /* === BIẾN CHUNG === */
         :root {
             --primary-color: #007bff;
             --danger-color: #e74c3c;
@@ -46,6 +53,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
             --shadow: 0 4px 12px rgba(0,0,0,0.08);
             --border-radius: 12px;
         }
+        
+        /* === THIẾT LẬP CƠ BẢN === */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0; padding: 0;
@@ -56,7 +65,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
             min-height: 100vh;
         }
         
-        /* Navbar */
+        /* === HEADER / NAVBAR === */
         .navbar {
             background-color: var(--white-color); padding: 0 40px; 
             display: flex; justify-content: space-between; align-items: center;
@@ -102,7 +111,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
             display: flex; justify-content: center; align-items: center;
         }
         
-        /* Container chung */
+        /* === BỐ CỤC CHUNG === */
         .container {
             max-width: 1300px;
             margin: 30px auto;
@@ -112,9 +121,10 @@ $current_page = basename($_SERVER['PHP_SELF']);
         .container-small { max-width: 900px; }
         .container-mini { max-width: 700px; }
         
-        /* Form chung (.form-group) */
+        /* === (SỬA LỖI) FORM CHUNG (ĐỦ TẤT CẢ INPUTS) === */
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+        
         .form-group input[type="text"],
         .form-group input[type="email"],
         .form-group input[type="password"],
@@ -122,7 +132,14 @@ $current_page = basename($_SERVER['PHP_SELF']);
         .form-group input[type="file"],
         .form-group input[type="date"],
         .form-group select,
-        .form-group textarea {
+        .form-group textarea,
+        /* CSS CHO BỘ LỌC (TIN TỨC, ĐƠN HÀNG) */
+        .filter-group input[type="text"],
+        .filter-group input[type="date"],
+        .filter-group input[type="number"],
+        .filter-group select,
+        /* CSS CHO MÃ GIẢM GIÁ (THANH TOÁN) */
+        .discount-code-form input[type="text"] {
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
@@ -131,12 +148,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
             box-sizing: border-box; 
         }
         
-        /* Thông báo chung */
-        .message { padding: 10px 15px; margin-bottom: 15px; border-radius: 4px; }
-        .message.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .message.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-
-        /* Nút bấm chung */
+        /* === NÚT BẤM CHUNG === */
         .btn {
             background-color: var(--primary-color); color: white; padding: 10px 15px;
             text-decoration: none; border: none; border-radius: 4px;
@@ -155,7 +167,47 @@ $current_page = basename($_SERVER['PHP_SELF']);
         }
         .btn-submit:hover { background-color: #0056b3; }
         
-        /* Tiêu đề chung */
+        /* === THÔNG BÁO CHUNG === */
+        .message { padding: 10px 15px; margin-bottom: 15px; border-radius: 4px; }
+        .message.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .message.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+        /* (MỚI) CSS CHO THÔNG BÁO AJAX (TOAST) */
+        #toast-container {
+            position: fixed;
+            top: 90px; /* Dưới navbar */
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast-notification {
+            background-color: #2c3e50; /* Màu tối */
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.5s ease;
+        }
+        .toast-notification.success { /* Thêm class success */
+             background-color: #28a745;
+        }
+        .toast-notification.error {
+            background-color: var(--danger-color);
+        }
+        .toast-notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* === CÁC THÀNH PHẦN CHUNG KHÁC === */
         .section-title {
             font-size: 2rem;
             color: var(--dark-color);
@@ -164,46 +216,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
             margin-bottom: 30px;
             display: inline-block;
         }
-
-        /* CSS CHO TIN TỨC */
-        .news-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-        }
-        .news-card {
-            background-color: var(--white-color);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            overflow: hidden; transition: all 0.3s ease;
-            text-decoration: none; color: var(--dark-color);
-            display: flex; flex-direction: column;
-        }
-        .news-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.12);
-        }
-        .news-image {
-            width: 100%; height: 200px;
-            object-fit: cover;
-        }
-        .news-content { padding: 20px; }
-        .news-date {
-            font-size: 0.85rem; color: #777;
-            margin-bottom: 10px;
-        }
-        .news-title {
-            font-size: 1.2rem; font-weight: 600;
-            margin: 0; height: 50px; 
-            overflow: hidden;
-        }
-        .news-summary {
-            font-size: 0.95rem; color: #555;
-            height: 60px; 
-            overflow: hidden; margin-top: 10px;
-        }
         
-        /* CSS BỘ LỌC CỦA USER */
+        /* (MỚI) CSS BỘ LỌC (DÙNG CHO TIN TỨC) */
         .filter-container {
             width: 100%;
             background: var(--white-color);
@@ -215,51 +229,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
             gap: 20px;
             margin-bottom: 30px;
         }
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-        }
-        .filter-group label {
-            font-size: 0.85em;
-            color: #555;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .filter-actions {
-            grid-column: 1 / -1; 
-            display: flex;
-            gap: 10px;
-        }
+        .filter-group { display: flex; flex-direction: column; }
+        .filter-group label { font-size: 0.85em; color: #555; margin-bottom: 5px; font-weight: bold; }
+        .filter-actions { grid-column: 1 / -1; display: flex; gap: 10px; }
         
-        /* === (SỬA LỖI) CSS CHO BỘ LỌC INPUT === */
-        .filter-group input[type="text"],
-        .filter-group input[type="date"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 1rem;
-            box-sizing: border-box; 
-        }
-        /* ======================================= */
-
-        /* CSS CHO FORM VIẾT BÀI */
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        .form-group.full-width { grid-column: 1 / -1; }
-        .upload-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
-        }
-        .upload-grid .form-group {
-            margin-bottom: 0;
-        }
-        
-        /* CSS BẢNG (TRANG BÀI VIẾT CỦA TÔI) */
+        /* (MỚI) CSS BẢNG (DÙNG CHO bai_viet_cua_toi.php) */
         .styled-table {
             width: 100%;
             border-collapse: collapse;
@@ -268,11 +242,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
             border-radius: 8px;
             overflow: hidden;
         }
-        .styled-table th, .styled-table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-        }
+        .styled-table th, .styled-table td { padding: 12px 15px; border-bottom: 1px solid #ddd; text-align: left; }
         .styled-table th { background-color: #f1f1f1; }
         .styled-table tr:hover { background-color: #f9f9f9; }
         .status-label {
@@ -282,8 +252,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
         .status-hien_thi { background-color: #28a745; }
         .status-an { background-color: #6c757d; }
         .status-cho_duyet { background-color: #ffc107; color: #333; }
-
-        /* === CSS FOOTER === */
+        
+        /* === FOOTER === */
         footer {
             background-color: #222;
             color: #aaa;
@@ -327,6 +297,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
 </head>
 <body>
 
+<div id="toast-container"></div>
+
 <nav class="navbar">
     <a href="index.php" class="logo"><i class="fas fa-mobile-alt"></i>PhoneStore</a>
     
@@ -349,18 +321,20 @@ $current_page = basename($_SERVER['PHP_SELF']);
     </div>
 
     <div class="nav-links-user">
-        <a href="gio_hang.php" class="nav-cart <?php echo ($current_page == 'gio_hang.php') ? 'active' : ''; ?>" title="Giỏ Hàng">
+        
+        <a href="gio_hang.php" class="nav-cart <?php echo ($current_page == 'gio_hang.php') ? 'active' : ''; ?>" title="Giỏ Hàng" id="cart-link">
             <i class="fas fa-shopping-cart"></i>
-            <?php if ($cart_count > 0): ?>
-                <span class="cart-badge"><?php echo $cart_count; ?></span>
-            <?php endif; ?>
+            
+            <span class="cart-badge" id="cart-badge" 
+                  style="<?php echo ($cart_count > 0) ? 'display: flex;' : 'display: none;'; ?>">
+                <?php echo $cart_count; ?>
+            </span>
         </a>
         
         <?php if (isset($_SESSION['id_nguoi_dung'])): ?>
             <a href="bai_viet_cua_toi.php" title="Bài viết của tôi" class="<?php echo ($current_page == 'bai_viet_cua_toi.php' || $current_page == 'viet_bai.php') ? 'active' : ''; ?>">
                 <i class="fas fa-pen-square"></i>
             </a> 
-            
             <a href="don_hang_cua_toi.php" title="Đơn hàng của tôi" class="<?php echo ($current_page == 'don_hang_cua_toi.php') ? 'active' : ''; ?>">
                 <i class="fas fa-receipt"></i>
             </a> 

@@ -1,148 +1,153 @@
 <?php
-// 1. BẮT ĐẦU SESSION (BẮT BUỘC PHẢI Ở DÒNG ĐẦU TIÊN)
-session_start(); 
-require 'dung_chung/ket_noi_csdl.php';
-
-// Kiểm tra xem hành động là gì
-$action = $_POST['action'] ?? $_GET['action'] ?? '';
-
-// Lấy URL để quay lại
-$return_url = $_POST['return_url'] ?? $_GET['return_url'] ?? 'gio_hang.php';
-
-// Kiểm tra xem người dùng đã đăng nhập chưa
-$is_logged_in = isset($_SESSION['id_nguoi_dung']);
-$id_nguoi_dung = $_SESSION['id_nguoi_dung'] ?? 0;
-
-try {
-    switch ($action) {
-        
-        case 'add':
-            // (Giữ nguyên logic 'add' từ file trước)
-            $id_san_pham = (int)$_POST['id_san_pham'];
-            $so_luong = (int)$_POST['so_luong'];
-            if ($id_san_pham <= 0 || $so_luong <= 0) throw new Exception("Dữ liệu không hợp lệ.");
-
-            if ($is_logged_in) {
-                $sql = "INSERT INTO gio_hang (id_nguoi_dung, id_san_pham, so_luong) 
-                        VALUES (?, ?, ?) 
-                        ON DUPLICATE KEY UPDATE so_luong = so_luong + VALUES(so_luong)";
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param("iii", $id_nguoi_dung, $id_san_pham, $so_luong);
-                $stmt->execute();
-            } else {
-                if (!isset($_SESSION['cart'])) $_SESSION['cart'] = [];
-                if (isset($_SESSION['cart'][$id_san_pham])) {
-                    $_SESSION['cart'][$id_san_pham]['so_luong'] += $so_luong;
-                } else {
-                    $_SESSION['cart'][$id_san_pham] = ['id_san_pham' => $id_san_pham, 'so_luong' => $so_luong, 'selected' => true];
-                }
-            }
-            $_SESSION['thong_bao_gio_hang'] = "Đã thêm sản phẩm vào giỏ hàng!";
-            break;
-
-        case 'update':
-            // (Giữ nguyên logic 'update' từ file trước)
-            $id_san_pham = (int)$_POST['id_san_pham'];
-            $so_luong = (int)$_POST['so_luong'];
-            if ($id_san_pham <= 0) throw new Exception("Sản phẩm không hợp lệ.");
-            if ($so_luong <= 0) $action = 'remove';
-
-            if ($action == 'update') {
-                if ($is_logged_in) {
-                    $sql = "UPDATE gio_hang SET so_luong = ? WHERE id_nguoi_dung = ? AND id_san_pham = ?";
-                    $stmt = $conn->prepare($sql);
-                    $stmt->bind_param("iii", $so_luong, $id_nguoi_dung, $id_san_pham);
-                    $stmt->execute();
-                } else {
-                    if (isset($_SESSION['cart'][$id_san_pham])) $_SESSION['cart'][$id_san_pham]['so_luong'] = $so_luong;
-                }
-                $_SESSION['thong_bao_gio_hang'] = "Cập nhật số lượng thành công!";
-            }
-            if ($action != 'remove') break;
-        
-        case 'remove':
-            // (Giữ nguyên logic 'remove' từ file trước)
-            $id_san_pham = (int)($_POST['id_san_pham'] ?? $_GET['id_san_pham'] ?? 0);
-            if ($id_san_pham <= 0) throw new Exception("Sản phẩm không hợp lệ.");
-
-            if ($is_logged_in) {
-                $sql = "DELETE FROM gio_hang WHERE id_nguoi_dung = ? AND id_san_pham = ?";
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param("ii", $id_nguoi_dung, $id_san_pham);
-                $stmt->execute();
-            } else {
-                if (isset($_SESSION['cart'][$id_san_pham])) unset($_SESSION['cart'][$id_san_pham]);
-            }
-            $_SESSION['thong_bao_gio_hang'] = "Đã xóa sản phẩm khỏi giỏ hàng.";
-            break;
-            
-        case 'clear':
-            // (Giữ nguyên logic 'clear' từ file trước)
-            if ($is_logged_in) {
-                $sql = "DELETE FROM gio_hang WHERE id_nguoi_dung = ?";
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param("i", $id_nguoi_dung);
-                $stmt->execute();
-            } else {
-                unset($_SESSION['cart']);
-            }
-            $_SESSION['thong_bao_gio_hang'] = "Đã xóa toàn bộ giỏ hàng.";
-            break;
-        
-        // --- LOGIC MỚI: MUA LẠI ---
-        case 'rebuy':
-            if (!$is_logged_in) {
-                throw new Exception("Bạn phải đăng nhập để thực hiện chức năng này.");
-            }
-            
-            $id_don_hang = (int)($_GET['id_don_hang'] ?? 0);
-            if ($id_don_hang <= 0) {
-                throw new Exception("Đơn hàng không hợp lệ.");
-            }
-
-            // 1. Kiểm tra đơn hàng này có phải của bạn không
-            $sql_check_owner = "SELECT id_don_hang FROM don_hang WHERE id_don_hang = ? AND id_nguoi_dung = ?";
-            $stmt_check = $conn->prepare($sql_check_owner);
-            $stmt_check->bind_param("ii", $id_don_hang, $id_nguoi_dung);
-            $stmt_check->execute();
-            if ($stmt_check->get_result()->num_rows == 0) {
-                throw new Exception("Lỗi bảo mật: Bạn không có quyền truy cập đơn hàng này.");
-            }
-
-            // 2. Lấy tất cả sản phẩm từ đơn hàng cũ
-            $sql_get_items = "SELECT id_san_pham, so_luong FROM chi_tiet_don_hang WHERE id_don_hang = ?";
-            $stmt_get = $conn->prepare($sql_get_items);
-            $stmt_get->bind_param("i", $id_don_hang);
-            $stmt_get->execute();
-            $items = $stmt_get->get_result();
-
-            // 3. Chuẩn bị câu lệnh thêm vào giỏ hàng
-            $sql_insert = "INSERT INTO gio_hang (id_nguoi_dung, id_san_pham, so_luong) 
-                           VALUES (?, ?, ?) 
-                           ON DUPLICATE KEY UPDATE so_luong = so_luong + VALUES(so_luong)";
-            $stmt_insert = $conn->prepare($sql_insert);
-
-            // 4. Lặp và thêm vào giỏ
-            while ($item = $items->fetch_assoc()) {
-                if ($item['id_san_pham']) { // Chỉ thêm nếu sản phẩm vẫn còn tồn tại (chưa bị xóa)
-                    $stmt_insert->bind_param("iii", $id_nguoi_dung, $item['id_san_pham'], $item['so_luong']);
-                    $stmt_insert->execute();
-                }
-            }
-            
-            $_SESSION['thong_bao_gio_hang'] = "Đã thêm các sản phẩm từ đơn hàng cũ vào giỏ!";
-            $return_url = 'gio_hang.php'; // Luôn chuyển về giỏ hàng
-            break;
-
-        default:
-            throw new Exception("Hành động không hợp lệ.");
-    }
-
-} catch (Exception $e) {
-    $_SESSION['thong_bao_loi_gio_hang'] = $e->getMessage();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
 }
 
-// Chuyển hướng người dùng quay lại
-header("Location: $return_url");
-exit();
+// (MỚI) XÓA SESSION CHECKOUT CŨ KHI GIỎ HÀNG THAY ĐỔI
+// Điều này sửa lỗi "thanh toán cũ"
+unset($_SESSION['checkout_items']);
+unset($_SESSION['checkout_discount_amount']);
+unset($_SESSION['checkout_discount_code']);
+unset($_SESSION['id_ma_giam_gia']);
+unset($_SESSION['ma_don_hang_tam']);
+// ===================================================
+
+require 'dung_chung/ket_noi_csdl.php';
+
+header('Content-Type: application/json');
+
+$action = $_POST['action'] ?? '';
+$id_san_pham = (int)($_POST['id_san_pham'] ?? 0);
+$so_luong = (int)($_POST['so_luong'] ?? 1);
+$id_nguoi_dung = $_SESSION['id_nguoi_dung'] ?? 0;
+
+$response = ['success' => false, 'message' => 'Hành động không hợp lệ.'];
+
+if ($id_san_pham == 0) {
+    $response['message'] = 'ID sản phẩm không hợp lệ.';
+    echo json_encode($response);
+    exit();
+}
+if ($so_luong <= 0 && $action == 'update') {
+    $action = 'remove'; // Nếu giảm về 0, coi như xóa
+}
+
+try {
+    // Xử lý Cập nhật số lượng
+    if ($action == 'update') {
+        if ($id_nguoi_dung > 0) {
+            $stmt = $conn->prepare("UPDATE gio_hang SET so_luong = ? WHERE id_nguoi_dung = ? AND id_san_pham = ?");
+            $stmt->bind_param("iii", $so_luong, $id_nguoi_dung, $id_san_pham);
+            $stmt->execute();
+        } else {
+            $_SESSION['cart'][$id_san_pham]['so_luong'] = $so_luong;
+        }
+    } 
+    // Xử lý Xóa
+    elseif ($action == 'remove') {
+        if ($id_nguoi_dung > 0) {
+            $stmt = $conn->prepare("DELETE FROM gio_hang WHERE id_nguoi_dung = ? AND id_san_pham = ?");
+            $stmt->bind_param("ii", $id_nguoi_dung, $id_san_pham);
+            $stmt->execute();
+        } else {
+            unset($_SESSION['cart'][$id_san_pham]);
+        }
+    } 
+    // Xử lý Thêm (Giả sử file này cũng xử lý 'add')
+    elseif ($action == 'add') {
+         if ($id_nguoi_dung > 0) {
+            $sql_check = "SELECT so_luong FROM gio_hang WHERE id_nguoi_dung = ? AND id_san_pham = ?";
+            $stmt_check = $conn->prepare($sql_check);
+            $stmt_check->bind_param("ii", $id_nguoi_dung, $id_san_pham);
+            $stmt_check->execute();
+            $result_check = $stmt_check->get_result();
+            if ($result_check->num_rows > 0) {
+                // Đã có -> Cập nhật
+                $row = $result_check->fetch_assoc();
+                $so_luong_moi = $row['so_luong'] + $so_luong;
+                $stmt_update = $conn->prepare("UPDATE gio_hang SET so_luong = ? WHERE id_nguoi_dung = ? AND id_san_pham = ?");
+                $stmt_update->bind_param("iii", $so_luong_moi, $id_nguoi_dung, $id_san_pham);
+                $stmt_update->execute();
+            } else {
+                // Chưa có -> Thêm mới
+                $stmt_insert = $conn->prepare("INSERT INTO gio_hang (id_nguoi_dung, id_san_pham, so_luong) VALUES (?, ?, ?)");
+                $stmt_insert->bind_param("iii", $id_nguoi_dung, $id_san_pham, $so_luong);
+                $stmt_insert->execute();
+            }
+         } else {
+             // Xử lý session
+             if (isset($_SESSION['cart'][$id_san_pham])) {
+                 $_SESSION['cart'][$id_san_pham]['so_luong'] += $so_luong;
+             } else {
+                 $_SESSION['cart'][$id_san_pham] = ['so_luong' => $so_luong];
+             }
+         }
+    }
+    
+    // TÍNH TOÁN LẠI TỔNG TIỀN ĐỂ TRẢ VỀ
+    $tong_tien_hang = 0;
+    $cart_count = 0;
+    $item_total = 0;
+    $phi_van_chuyen = 30000;
+    
+    if ($id_nguoi_dung > 0) {
+        $sql_cart = "SELECT g.id_san_pham, g.so_luong, s.gia_ban 
+                     FROM gio_hang g JOIN san_pham s ON g.id_san_pham = s.id 
+                     WHERE g.id_nguoi_dung = ?";
+        $stmt_cart = $conn->prepare($sql_cart);
+        $stmt_cart->bind_param("i", $id_nguoi_dung);
+        $stmt_cart->execute();
+        $result_cart = $stmt_cart->get_result();
+        while ($row = $result_cart->fetch_assoc()) {
+            $thanh_tien = $row['gia_ban'] * $row['so_luong'];
+            $tong_tien_hang += $thanh_tien;
+            if ($row['id_san_pham'] == $id_san_pham) {
+                $item_total = $thanh_tien;
+            }
+            $cart_count++;
+        }
+    } else {
+        if (isset($_SESSION['cart']) && !empty($_SESSION['cart'])) {
+            $item_ids = array_keys($_SESSION['cart']);
+            $placeholders = implode(',', array_fill(0, count($item_ids), '?'));
+            $sql_products = "SELECT id, gia_ban FROM san_pham WHERE id IN ($placeholders)";
+            $stmt_products = $conn->prepare($sql_products);
+            $stmt_products->bind_param(str_repeat('i', count($item_ids)), ...$item_ids);
+            $stmt_products->execute();
+            $products_result = $stmt_products->get_result();
+            
+            $product_prices = [];
+            while($row = $products_result->fetch_assoc()) {
+                $product_prices[$row['id']] = $row['gia_ban'];
+            }
+            
+            foreach($_SESSION['cart'] as $id_sp_session => $item) {
+                if (isset($product_prices[$id_sp_session])) {
+                    $so_luong_session = (int)$item['so_luong'];
+                    $thanh_tien = $product_prices[$id_sp_session] * $so_luong_session;
+                    $tong_tien_hang += $thanh_tien;
+                    if ($id_sp_session == $id_san_pham) {
+                        $item_total = $thanh_tien;
+                    }
+                    $cart_count++;
+                }
+            }
+        }
+    }
+    
+    $tong_cong = $tong_tien_hang + $phi_van_chuyen;
+    
+    $response['success'] = true;
+    $response['message'] = 'Cập nhật giỏ hàng thành công.';
+    $response['item_total_formatted'] = number_format($item_total, 0, ',', '.') . 'đ';
+    $response['subtotal_formatted'] = number_format($tong_tien_hang, 0, ',', '.') . 'đ';
+    $response['total_formatted'] = number_format($tong_cong, 0, ',', '.') . 'đ';
+    $response['new_cart_count'] = $cart_count;
+
+} catch (Exception $e) {
+    $response['message'] = 'Lỗi máy chủ: ' . $e->getMessage();
+}
+
+echo json_encode($response);
+$conn->close();
 ?>

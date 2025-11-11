@@ -1,4 +1,5 @@
 <?php
+// (File gọi đã gọi config.php và tạo $conn)
 if (isset($conn) && $conn) {
     $conn->close();
 }
@@ -17,6 +18,7 @@ if (isset($conn) && $conn) {
                 <li><a href="index.php#san-pham"><i class="fas fa-mobile-alt"></i>Sản phẩm</a></li>
                 <li><a href="tin_tuc.php"><i class="fas fa-newspaper"></i>Tin tức</a></li>
                 <li><a href="don_hang_cua_toi.php"><i class="fas fa-receipt"></i>Đơn hàng</a></li>
+                
                 <?php if (isset($_SESSION['id_nguoi_dung'])): ?>
                     <li><a href="bai_viet_cua_toi.php"><i class="fas fa-pen-square"></i>Bài viết của tôi</a></li>
                 <?php endif; ?>
@@ -30,7 +32,7 @@ if (isset($conn) && $conn) {
             <p><i class="fas fa-envelope"></i>support@phonestore.vn</p>
         </div>
         <div class="footer-col">
-            <h3>Kết nối với chúng tôi</h3>
+             <h3>Kết nối với chúng tôi</h3>
             <p>Theo dõi chúng tôi trên các mạng xã hội để nhận thông tin khuyến mãi mới nhất.</p>
         </div>
     </div>

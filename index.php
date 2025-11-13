@@ -5,421 +5,621 @@ if (session_status() == PHP_SESSION_NONE) {
 }
 require 'dung_chung/ket_noi_csdl.php';
 
-// 2. PHẦN LOGIC PHP CỦA RIÊNG TRANG NÀY
-$page_title = "Trang Chủ - PhoneStore";
-
-// LẤY HÃNG (CHO BỘ LỌC)
-$sql_hang = "SELECT id_hang, ten_hang FROM hang_san_xuat WHERE trang_thai = 'hien_thi' ORDER BY ten_hang ASC";
-$result_hang = $conn->query($sql_hang);
-$hang_list = [];
-if ($result_hang) {
-    while ($row = $result_hang->fetch_assoc()) {
-        $hang_list[] = $row;
+// 2. LOGIC LẤY SỐ LƯỢNG GIỎ HÀNG (CHO HEADER)
+$cart_count = 0;
+if (isset($_SESSION['id_nguoi_dung'])) {
+    $id_nguoi_dung = $_SESSION['id_nguoi_dung'];
+    $sql_count = "SELECT SUM(so_luong) as total FROM gio_hang WHERE id_nguoi_dung = ?";
+    $stmt_count = $conn->prepare($sql_count);
+    $stmt_count->bind_param("i", $id_nguoi_dung);
+    $stmt_count->execute();
+    $result_count = $stmt_count->get_result();
+    $cart_count = $result_count->fetch_assoc()['total'] ?? 0;
+} elseif (isset($_SESSION['cart'])) {
+    foreach ($_SESSION['cart'] as $item) {
+        $cart_count += ($item['so_luong'] ?? 1);
     }
 }
 
-// LẤY CÁC THAM SỐ LỌC TỪ URL
-$current_id_hang = (int)($_GET['id_hang'] ?? 0);
-$current_min_price = (int)($_GET['min_price'] ?? 0);
-$current_max_price = (int)($_GET['max_price'] ?? 0);
-$current_sort_by = $_GET['sort_by'] ?? 'moi_nhat';
-
-// LỌC SẢN PHẨM
-$sql_products = "SELECT 
-                    s.id, s.ten_san_pham, s.anh_dai_dien, s.gia_ban, 
-                    s.gia_goc, s.phan_tram_giam_gia, 
-                    s.ngay_bat_dau_giam, s.ngay_ket_thuc_giam,
-                    h.ten_hang
-                FROM 
-                    san_pham s
-                JOIN 
-                    hang_san_xuat h ON s.id_hang = h.id_hang";
-$where_clauses = ["s.trang_thai = 'hiện'", "h.trang_thai = 'hien_thi'"];
-$params = [];
-$param_types = "";
-if ($current_id_hang > 0) {
-    $where_clauses[] = "s.id_hang = ?";
-    $params[] = $current_id_hang;
-    $param_types .= "i";
-}
-if ($current_min_price > 0) {
-    $where_clauses[] = "s.gia_ban >= ?";
-    $params[] = $current_min_price;
-    $param_types .= "i";
-}
-if ($current_max_price > 0) {
-    $where_clauses[] = "s.gia_ban <= ?";
-    $params[] = $current_max_price;
-    $param_types .= "i";
-}
-$sql_products .= " WHERE " . implode(" AND ", $where_clauses);
-switch ($current_sort_by) {
-    case 'gia_thap_cao': $sql_products .= " ORDER BY s.gia_ban ASC"; break;
-    case 'gia_cao_thap': $sql_products .= " ORDER BY s.gia_ban DESC"; break;
-    default: $sql_products .= " ORDER BY s.ngay_cap_nhat DESC"; break;
-}
-$stmt_products = $conn->prepare($sql_products);
-if (!empty($params)) {
-    $stmt_products->bind_param($param_types, ...$params);
-}
-$stmt_products->execute();
-$result_products = $stmt_products->get_result();
+// 3. LOGIC LẤY DỮ LIỆU TRANG
 $hom_nay = date('Y-m-d'); 
 
-// LẤY TIN TỨC (CHO CUỐI TRANG)
-$sql_news = "SELECT id_tin_tuc, tieu_de, noi_dung_1, anh_dai_dien, ngay_dang 
-             FROM tin_tuc 
-             WHERE trang_thai = 'hien_thi' 
-             ORDER BY ngay_dang DESC 
-             LIMIT 3"; 
-$result_news = $conn->query($sql_news);
-$news_list = [];
-if ($result_news) {
-    while($row = $result_news->fetch_assoc()) {
-        $news_list[] = $row;
+// --- 3.1. LẤY BANNER SỰ KIỆN ---
+$active_event = null;
+$sql_event = "SELECT * FROM quang_cao_slider 
+              WHERE trang_thai = 'hien_thi' 
+              AND ? BETWEEN ngay_bat_dau AND ngay_ket_thuc
+              ORDER BY vi_tri ASC, id_qc DESC 
+              LIMIT 1"; // Lấy 1 banner mới nhất
+$stmt_event = $conn->prepare($sql_event);
+$stmt_event->bind_param("s", $hom_nay);
+$stmt_event->execute();
+$result_event = $stmt_event->get_result();
+if ($result_event->num_rows > 0) {
+    $active_event = $result_event->fetch_assoc();
+}
+
+// Chuẩn bị biến cho HERO BANNER (Dựa trên template index.html)
+$hero_title = "Sức Mạnh <span class='text-accent block lg:inline'>Trong Tay Bạn.</span>";
+$hero_subtitle = "Khám phá những chiếc điện thoại thông minh mới nhất với thiết kế đột phá và hiệu năng vượt trội.";
+$hero_cta_link = "#featured";
+$hero_image_html = '
+<div class="w-64 h-96 md:w-80 md:h-112 bg-gray-800 rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-8 border-gray-700 overflow-hidden transform rotate-3 hover:rotate-0 transition duration-500 ease-in-out animate-float">
+    <div class="bg-accent h-2 w-16 mx-auto mt-4 rounded-full"></div>
+    <div class="w-full h-full p-2">
+        <div class="bg-primary-dark/50 text-center flex flex-col items-center justify-center h-full text-gray-400 text-sm">
+            <svg class="w-12 h-12 text-accent mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+            <p class="font-bold">Màn Hình Vô Cực</p>
+            <p>Tận hưởng trải nghiệm tuyệt đỉnh.</p>
+        </div>
+    </div>
+</div>'; // HTML Mockup mặc định
+
+if ($active_event) {
+    // Nếu có sự kiện, ghi đè
+    $hero_title = $active_event['noi_dung_ghi_chu'] ?? 'Sự Kiện Đặc Biệt'; 
+    $hero_subtitle = 'Ưu đãi có hạn. Khám phá ngay!';
+    $hero_cta_link = $active_event['link_dich'] ?? '#featured';
+    
+    $anh_path_event = 'tai_len/quang_cao/' . $active_event['hinh_anh'];
+    if (file_exists($anh_path_event)) {
+        // Thay thế HTML mockup bằng ảnh thật
+        $hero_image_html = '<img src="'.$anh_path_event.'" alt="'.htmlspecialchars($hero_title).'" class="w-auto h-96 md:h-112 object-contain animate-float transform rotate-3">';
     }
+}
+
+// --- 3.2. LẤY SẢN PHẨM NỔI BẬT (MỚI NHẤT) ---
+$featured_products = [];
+$sql_featured = "SELECT s.*, h.ten_hang FROM san_pham s
+                 JOIN hang_san_xuat h ON s.id_hang = h.id_hang
+                 WHERE s.trang_thai = 'hiện'
+                 ORDER BY s.ngay_cap_nhat DESC
+                 LIMIT 3"; // Template chỉ có 3
+$result_featured = $conn->query($sql_featured);
+if ($result_featured) {
+    while($row = $result_featured->fetch_assoc()) $featured_products[] = $row;
+}
+
+// --- 3.3. HÀM TÍNH GIÁ (QUAN TRỌNG) ---
+function tinhGiaHienThi($sp, $hom_nay) {
+    $gia_hien_thi = (float)$sp['gia_ban'];
+    $gia_cu = !empty($sp['gia_goc']) ? (float)$sp['gia_goc'] : null;
+    $phan_tram_hien_thi = null;
+    $dang_giam_gia_theo_ngay = (
+        !empty($sp['ngay_bat_dau_giam']) &&
+        !empty($sp['ngay_ket_thuc_giam']) &&
+        $hom_nay >= $sp['ngay_bat_dau_giam'] &&
+        $hom_nay <= $sp['ngay_ket_thuc_giam']
+    );
+    if ($dang_giam_gia_theo_ngay && !empty($sp['phan_tram_giam_gia'])) {
+        $gia_cu = $sp['gia_ban']; 
+        $gia_hien_thi = $gia_cu * (1 - (float)$sp['phan_tram_giam_gia'] / 100);
+        $phan_tram_hien_thi = (int)$sp['phan_tram_giam_gia'];
+    } 
+    else if (!empty($gia_cu) && $gia_cu > $gia_hien_thi) {
+        $phan_tram_hien_thi = round((($gia_cu - $gia_hien_thi) / $gia_cu) * 100);
+    }
+    else {
+        $gia_cu = null; 
+    }
+    return ['gia_hien_thi' => $gia_hien_thi, 'gia_cu' => $gia_cu, 'phan_tram' => $phan_tram_hien_thi];
 }
 ?>
 
-<?php
-// 3. GỌI ĐẦU TRANG 
-require 'dung_chung/dau_trang.php';
-// (dau_trang.php đã được sửa để có <div> toast và ID cho giỏ hàng)
-?>
-
-<style>
-    /* CSS riêng của trang Index */
-    .hero {
-        height: 50vh;
-        background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?q=80&w=2070&auto=format&fit=crop');
-        background-size: cover; background-position: center;
-        display: flex; flex-direction: column;
-        justify-content: center; align-items: center;
-        text-align: center; color: var(--white-color);
-        padding: 0 20px;
-    }
-    .hero h1 { font-size: 3rem; margin: 0; }
-    .hero p { font-size: 1.25rem; margin: 10px 0 20px 0; }
-    .hero .hero-cta {
-        background-color: var(--primary-color); color: var(--white-color);
-        padding: 12px 25px; font-size: 1rem; font-weight: bold;
-        text-decoration: none; border-radius: 5px;
-        transition: background-color 0.3s ease;
-    }
-    .hero .hero-cta:hover { background-color: #0056b3; }
-    
-    /* CSS Cho Bộ Lọc */
-    .filter-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .btn-filter-toggle { background-color: #6c757d; color: white; border: none; padding: 10px 15px; font-size: 1rem; font-weight: 500; border-radius: 5px; cursor: pointer; }
-    .filter-bar {
-        background-color: var(--white-color); padding: 20px;
-        border-radius: var(--border-radius); box-shadow: var(--shadow);
-        margin-bottom: 25px; display: none; 
-        grid-template-columns: 1fr 1fr 1fr 150px;
-        gap: 20px; align-items: flex-end;
-    }
-    .filter-bar.active { display: grid; }
-    .filter-group { display: flex; flex-direction: column; }
-    .filter-group label { font-size: 0.9rem; font-weight: 500; color: #555; margin-bottom: 5px; }
-    .btn-filter-submit { background-color: var(--primary-color); color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 1rem; }
-    .brand-filter-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px; }
-    .brand-link { text-decoration: none; color: var(--dark-color); background-color: var(--white-color); border: 1px solid #ddd; padding: 8px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; }
-    .brand-link:hover { border-color: var(--primary-color); color: var(--primary-color); }
-    .brand-link.active { background-color: var(--primary-color); color: var(--white-color); border-color: var(--primary-color); }
-    
-    /* CSS Sản phẩm */
-    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
-    .product-card { background-color: var(--white-color); border: 1px solid #eee; border-radius: var(--border-radius); box-shadow: var(--shadow); transition: all 0.3s ease; position: relative; display: flex; flex-direction: column; overflow: hidden; }
-    .product-card:hover { transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0,0,0,0.12); }
-    .product-image-link { display: block; background-color: #f9f9f9; padding: 10px; }
-    .product-image { width: 100%; height: 250px; object-fit: contain; }
-    .product-details { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; text-align: left; }
-    .product-brand { font-size: 0.85rem; color: #777; margin-bottom: 5px; }
-    .product-title { font-size: 1.1rem; font-weight: 600; color: var(--dark-color); margin: 0; height: 44px; overflow: hidden; text-decoration: none; }
-    .product-title a { text-decoration: none; color: inherit; }
-    .product-price { margin-top: auto; padding-top: 10px; }
-    .product-price .current-price { font-size: 1.3rem; color: var(--danger-color); font-weight: bold; }
-    .product-price .old-price { font-size: 0.9rem; color: #999; text-decoration: line-through; margin-left: 8px; }
-    .sale-badge { position: absolute; top: 15px; right: 15px; background-color: var(--danger-color); color: #fff; padding: 4px 8px; font-size: 0.8rem; border-radius: 5px; font-weight: bold; }
-    .add-to-cart-form { margin-top: 15px; }
-    .btn-add-to-cart { background-color: var(--primary-color); color: white; border: none; border-radius: 5px; padding: 12px 15px; width: 100%; font-size: 1rem; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
-    .btn-add-to-cart:hover { background-color: #0056b3; }
-    
-    /* CSS Tin Tức (Cho cuối trang) */
-    .news-section { margin-top: 40px; }
-    .news-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; }
-    .news-card { background-color: var(--white-color); border-radius: var(--border-radius); box-shadow: var(--shadow); overflow: hidden; transition: all 0.3s ease; text-decoration: none; color: var(--dark-color); display: flex; flex-direction: column; }
-    .news-card:hover { transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0,0,0,0.12); }
-    .news-image { width: 100%; height: 200px; object-fit: cover; }
-    .news-content { padding: 20px; }
-    .news-date { font-size: 0.85rem; color: #777; margin-bottom: 10px; }
-    .news-title { font-size: 1.2rem; font-weight: 600; margin: 0; height: 50px; overflow: hidden; }
-    .news-summary { font-size: 0.95rem; color: #555; height: 60px; overflow: hidden; margin-top: 10px; }
-    .section-footer { text-align: center; margin-top: 30px; }
-</style>
-
-<header class="hero">
-    <h1>Khuyến Mãi Khủng</h1>
-    <p>Giảm giá sập sàn. Mua ngay kẻo lỡ!</p>
-    <a href="#san-pham" class="hero-cta">Xem Ngay</a>
-</header>
-
-<main class="container" id="san-pham">
-    
-    <div class="filter-controls">
-        <h1 class="section-title" style="margin-bottom: 0;">Danh sách Sản phẩm</h1>
-        <button id="filter-toggle-btn" class="btn-filter-toggle">Lọc Sản Phẩm</button>
-    </div>
-    
-    <form action="index.php" method="GET" id="filter-bar" class="filter-bar">
-        <?php if ($current_id_hang > 0): ?>
-            <input type="hidden" name="id_hang" value="<?php echo $current_id_hang; ?>">
-        <?php endif; ?>
-        <div class="filter-group">
-            <label for="min_price">Giá Từ (VNĐ):</label>
-            <input type="number" id="min_price" name="min_price" placeholder="0" 
-                   value="<?php echo $current_min_price > 0 ? $current_min_price : ''; ?>">
-        </div>
-        <div class="filter-group">
-            <label for="max_price">Giá Đến (VNĐ):</label>
-            <input type="number" id="max_price" name="max_price" placeholder="100000000"
-                   value="<?php echo $current_max_price > 0 ? $current_max_price : ''; ?>">
-        </div>
-        <div class="filter-group">
-            <label for="sort_by">Sắp xếp theo:</label>
-            <select id="sort_by" name="sort_by">
-                <option value="moi_nhat" <?php echo ($current_sort_by == 'moi_nhat') ? 'selected' : ''; ?>>Mới nhất</option>
-                <option value="gia_thap_cao" <?php echo ($current_sort_by == 'gia_thap_cao') ? 'selected' : ''; ?>>Giá: Thấp đến Cao</option>
-                <option value="gia_cao_thap" <?php echo ($current_sort_by == 'gia_cao_thap') ? 'selected' : ''; ?>>Giá: Cao đến Thấp</option>
-            </select>
-        </div>
-        <button type="submit" class="btn-filter-submit">Áp dụng</button>
-    </form>
-    
-    <div class="brand-filter-bar">
-        <?php
-        $filter_params = $_GET;
-        unset($filter_params['id_hang']);
-        $filter_query_string = http_build_query($filter_params);
-        ?>
-        <a href="?<?php echo $filter_query_string; ?>" 
-           class="brand-link <?php echo ($current_id_hang == 0) ? 'active' : ''; ?>">
-           Tất cả
-        </a>
-        <?php foreach ($hang_list as $hang): ?>
-            <a href="?id_hang=<?php echo $hang['id_hang']; ?>&<?php echo $filter_query_string; ?>" 
-               class="brand-link <?php echo ($current_id_hang == $hang['id_hang']) ? 'active' : ''; ?>">
-               <?php echo htmlspecialchars($hang['ten_hang']); ?>
-            </a>
-        <?php endforeach; ?>
-    </div>
-    
-    <div class="product-grid">
-        <?php if ($result_products && $result_products->num_rows > 0): ?>
-            <?php while($sp = $result_products->fetch_assoc()): ?>
-                <?php
-                // (Logic giá giữ nguyên)
-                $gia_hien_thi = (float)$sp['gia_ban'];
-                $gia_cu = !empty($sp['gia_goc']) ? (float)$sp['gia_goc'] : null;
-                $phan_tram_hien_thi = null;
-                $dang_giam_gia_theo_ngay = (
-                    !empty($sp['ngay_bat_dau_giam']) &&
-                    !empty($sp['ngay_ket_thuc_giam']) &&
-                    $hom_nay >= $sp['ngay_bat_dau_giam'] &&
-                    $hom_nay <= $sp['ngay_ket_thuc_giam']
-                );
-                if ($dang_giam_gia_theo_ngay && !empty($sp['phan_tram_giam_gia'])) {
-                    $gia_cu = $sp['gia_ban']; 
-                    $gia_hien_thi = $gia_cu * (1 - (float)$sp['phan_tram_giam_gia'] / 100);
-                    $phan_tram_hien_thi = (int)$sp['phan_tram_giam_gia'];
-                } 
-                else if (!empty($gia_cu) && $gia_cu > $gia_hien_thi) {
-                    $phan_tram_hien_thi = round((($gia_cu - $gia_hien_thi) / $gia_cu) * 100);
-                }
-                else {
-                    $gia_cu = null; 
-                }
-                ?>
-                <div class="product-card">
-                    <?php if ($phan_tram_hien_thi): ?>
-                        <div class="sale-badge">-<?php echo $phan_tram_hien_thi; ?>%</div>
-                    <?php endif; ?>
-                    
-                    <a href="chi_tiet_san_pham.php?id=<?php echo $sp['id']; ?>" class="product-image-link">
-                        <?php 
-                        $anh_path = 'tai_len/san_pham/' . ($sp['anh_dai_dien'] ?? 'default.png');
-                        if (empty($sp['anh_dai_dien']) || !file_exists($anh_path)) {
-                            $anh_path = 'tai_len/san_pham/default.png'; 
-                        }
-                        ?>
-                        <img src="<?php echo $anh_path; ?>" alt="<?php echo htmlspecialchars($sp['ten_san_pham']); ?>" class="product-image">
-                    </a>
-                    <div class="product-details">
-                        <div class="product-brand"><?php echo htmlspecialchars($sp['ten_hang']); ?></div>
-                        <a href="chi_tiet_san_pham.php?id=<?php echo $sp['id']; ?>" class="product-title">
-                            <?php echo htmlspecialchars($sp['ten_san_pham']); ?>
-                        </a>
-                        <div class="product-price">
-                            <span class="current-price"><?php echo number_format($gia_hien_thi, 0, ',', '.'); ?>đ</span>
-                            <?php if ($gia_cu): ?>
-                                <span class="old-price"><?php echo number_format($gia_cu, 0, ',', '.'); ?>đ</span>
-                            <?php endif; ?>
-                        </div>
-                        
-                        <form action="xu_ly_gio_hang.php" method="POST" class="add-to-cart-form ajax-add-to-cart-form" data-turbolinks="false">
-                            <input type="hidden" name="action" value="add">
-                            <input type="hidden" name="id_san_pham" value="<?php echo $sp['id']; ?>">
-                            <input type="hidden" name="so_luong" value="1">
-                            <button type="submit" class="btn-add-to-cart"><i class="fas fa-cart-plus"></i> Thêm vào giỏ</button>
-                        </form>
-                    </div>
-                </div>
-            <?php endwhile; ?>
-        <?php else: ?>
-            <p style="text-align: center; grid-column: 1 / -1; font-size: 1.2rem;">Không tìm thấy sản phẩm nào khớp với bộ lọc.</p>
-        <?php endif; ?>
-    </div>
-    
-    <div class="news-section">
-        <h1 class="section-title">Tin Tức Công Nghệ</h1>
-        <div class="news-grid">
-            <?php if (empty($news_list)): ?>
-                <p>Chưa có tin tức nào.</p>
-            <?php else: ?>
-                <?php foreach($news_list as $news_item): ?>
-                    <a href="chi_tiet_tin_tuc.php?id=<?php echo $news_item['id_tin_tuc']; ?>" class="news-card">
-                        <?php 
-                        $anh_path_news = 'tai_len/tin_tuc/' . ($news_item['anh_dai_dien'] ?? 'default.png');
-                        if (empty($news_item['anh_dai_dien']) || !file_exists($anh_path_news)) {
-                            $anh_path_news = 'tai_len/san_pham/default.png'; 
-                        }
-                        ?>
-                        <img src="<?php echo $anh_path_news; ?>" alt="<?php echo htmlspecialchars($news_item['tieu_de']); ?>" class="news-image">
-                        <div class="news-content">
-                            <div class="news-date"><?php echo date('d/m/Y', strtotime($news_item['ngay_dang'])); ?></div>
-                            <h3 class="news-title"><?php echo htmlspecialchars($news_item['tieu_de']); ?></h3>
-                            <p class="news-summary"><?php echo htmlspecialchars($news_item['noi_dung_1']); ?></p>
-                        </div>
-                    </a>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
-        <div class="section-footer">
-            <a href="tin_tuc.php" class="btn" style="gap: 8px;">
-                <i class="fas fa-newspaper"></i> Xem tất cả tin tức
-            </a>
-        </div>
-    </div>
-    
-</main> <script>
-    document.addEventListener("turbolinks:load", function() {
-        const toggleBtn = document.getElementById('filter-toggle-btn');
-        const filterBar = document.getElementById('filter-bar');
-        
-        if (toggleBtn && filterBar) { // Chỉ chạy nếu có nút này
-            toggleBtn.addEventListener('click', function() {
-                filterBar.classList.toggle('active');
-                
-                if (filterBar.classList.contains('active')) {
-                    toggleBtn.textContent = 'Đóng Lọc';
-                } else {
-                    toggleBtn.textContent = 'Lọc Sản Phẩm';
-                }
-            });
-
-            <?php if ($current_min_price > 0 || $current_max_price > 0 || $current_sort_by != 'moi_nhat'): ?>
-                if (filterBar) filterBar.classList.add('active');
-                if (toggleBtn) toggleBtn.textContent = 'Đóng Lọc';
-            <?php endif; ?>
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo htmlspecialchars($page_title); ?></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
         }
-    });
-</script>
 
-
-<script>
-    // Hàm này được gọi bởi Turbolinks mỗi khi trang tải
-    document.addEventListener("turbolinks:load", function() {
-        
-        // 1. Tìm tất cả các form "Thêm vào giỏ"
-        const allForms = document.querySelectorAll('.ajax-add-to-cart-form');
-        
-        allForms.forEach(form => {
-            // Gán sự kiện submit cho từng form
-            form.addEventListener('submit', function(event) {
-                // 2. Ngăn chặn form gửi đi (ngăn lỗi trang trắng)
-                event.preventDefault(); 
-                
-                const formData = new FormData(this);
-                
-                // 3. Gửi yêu cầu ngầm (Fetch)
-                fetch('xu_ly_gio_hang.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    // 4. Xử lý kết quả JSON
-                    if (data.success) {
-                        // Cập nhật số lượng trên icon
-                        updateCartBadge(data.new_cart_count);
-                        // Hiển thị thông báo thành công
-                        showToast('Đã thêm vào giỏ hàng!', 'success');
-                    } else {
-                        // Báo lỗi (nếu có)
-                        showToast(data.message || 'Lỗi: Không thể thêm vào giỏ.', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Lỗi Fetch:', error);
-                    showToast('Lỗi kết nối. Vui lòng thử lại.', 'error');
-                });
-            });
-        });
-    });
-
-    // 5. Hàm cập nhật icon giỏ hàng
-    function updateCartBadge(count) {
-        const badge = document.getElementById('cart-badge');
-        if (badge) {
-            if (count > 0) {
-                badge.textContent = count;
-                badge.style.display = 'flex';
-            } else {
-                badge.style.display = 'none';
+        /* 1. Custom Keyframe for Floating Effect */
+        @keyframes float {
+            0% {
+                transform: translatey(0px) rotate(3deg);
+            }
+            50% {
+                transform: translatey(-10px) rotate(1deg);
+            }
+            100% {
+                transform: translatey(0px) rotate(3deg);
             }
         }
-    }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
 
-    // 6. Hàm hiển thị thông báo "Toast"
-    function showToast(message, type = 'success') {
-        const toastContainer = document.getElementById('toast-container');
-        if (!toastContainer) return;
+        /* 2. Custom Keyframe for subtle heartbeat on logo */
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .animate-heartbeat {
+            animation: heartbeat 1.5s ease-in-out infinite;
+        }
 
-        const toast = document.createElement('div');
-        toast.className = `toast-notification ${type}`;
-        toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i> ${message}`;
+        /* 3. Custom Keyframe for FadeInUp */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translate3d(0, 30px, 0);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0);
+            }
+        }
         
-        toastContainer.appendChild(toast);
+        /* 4. IntersectionObserver helper classes */
+        .animate-on-scroll {
+            opacity: 0;
+            will-change: opacity, transform;
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+            transition-delay: 0.1s; /* Thêm 1 chút delay */
+            transform: translateY(20px);
+        }
+        .animate-on-scroll.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
 
-        // Hiển thị
-        setTimeout(() => {
-            toast.classList.add('show');
-        }, 100); 
+        /* 5. Navbar scroll effect */
+        #main-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            transition: background-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            background-color: rgba(31, 41, 55, 0.95); /* bg-secondary-dark/95 */
+            backdrop-filter: blur(4px);
+        }
+        /* (MỚI) CSS Cho giỏ hàng trong Header */
+        .cart-badge {
+            position: absolute;
+            top: -8px;
+            right: -10px;
+            background-color: #EF4444; /* bg-red-500 */
+            color: white;
+            font-size: 0.75rem; /* 12px */
+            font-weight: 700;
+            border-radius: 9999px;
+            width: 1.25rem; /* 20px */
+            height: 1.25rem; /* 20px */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-        // Tự động ẩn sau 3 giây
-        setTimeout(() => {
-            toast.classList.remove('show');
-            // Xóa khỏi DOM sau khi mờ đi
-            setTimeout(() => {
-                if(toast.parentNode) {
-                    toast.parentNode.removeChild(toast);
+        /* (MỚI) CSS cho Toast Notification */
+        #toast-notification {
+            position: fixed;
+            top: 5rem; /* 80px */
+            right: 1.5rem; /* 24px */
+            z-index: 9999;
+            max-width: 320px;
+            background-color: #111827; /* bg-gray-900 */
+            color: #ffffff;
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
+            padding: 1rem; /* p-4 */
+            display: flex;
+            align-items: center;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        #toast-notification.success {
+             background-color: #059669; /* bg-emerald-600 */
+        }
+         #toast-notification.error {
+             background-color: #DC2626; /* bg-red-600 */
+        }
+        #toast-notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        #toast-icon {
+            width: 1.25rem; /* w-5 */
+            height: 1.25rem; /* h-5 */
+            margin-right: 0.75rem; /* mr-3 */
+        }
+        #toast-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: #9CA3AF; /* text-gray-400 */
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-dark': '#111827', // Gray 900
+                        'secondary-dark': '#1F2937', // Gray 800
+                        'accent': '#4F46E5', // Indigo 600
+                        'accent-hover': '#4338CA', // Indigo 700
+                    }
                 }
-            }, 500); 
-        }, 3000);
-    }
-</script>
+            }
+        }
+    </script>
+</head>
+<body class="bg-primary-dark text-white min-h-screen">
 
+    <header id="main-header" class="shadow-lg">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <a href="index.php" class="text-2xl font-extrabold tracking-tight text-white animate-heartbeat">
+                DIEN THOAI<span class="text-accent">.STORE</span>
+            </a>
 
-<?php
-require 'dung_chung/cuoi_trang.php';
-?>
+            <div class="hidden md:flex items-center space-x-8 font-medium">
+                <a href="index.php" class="text-white hover:text-accent transition duration-200">Trang Chủ</a>
+                <a href="#featured" class="text-gray-300 hover:text-accent transition duration-200">Sản Phẩm</a>
+                <a href="tin_tuc.php" class="text-gray-300 hover:text-accent transition duration-200">Tin Tức</a>
+                
+                <a href="gio_hang.php" class="text-gray-300 hover:text-accent relative" id="cart-link" title="Giỏ hàng">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    <span id="cart-badge" class="cart-badge" style="<?php echo ($cart_count > 0) ? 'display: flex;' : 'display: none;'; ?>">
+                        <?php echo $cart_count; ?>
+                    </span>
+                </a>
+                
+                <?php if (isset($_SESSION['id_nguoi_dung'])): ?>
+                    <a href="thong_tin_tai_khoan.php" class="text-gray-300 hover:text-accent" title="Tài khoản">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    </a>
+                    <a href="dang_xuat.php" class="text-gray-300 hover:text-accent" title="Đăng xuất" data-turbolinks="false">
+                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" /></svg>
+                    </a>
+                <?php else: ?>
+                    <a href="dang_nhap.php" class="text-sm font-medium text-gray-300 hover:text-accent" data-turbolinks="false">Đăng nhập</a>
+                    <a href="dang_ky.php" class="text-sm font-medium text-white bg-accent px-4 py-2 rounded-lg hover:bg-accent-hover" data-turbolinks="false">Đăng ký</a>
+                <?php endif; ?>
+
+                <a href="lien_he.php" class="bg-accent text-white px-4 py-2 rounded-lg hover:bg-accent-hover transition duration-300 shadow-md text-sm">Liên Hệ</a>
+            </div>
+
+            <button id="mobile-menu-btn" class="md:hidden text-white focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </nav>
+
+        <div id="mobile-menu" class="hidden md:hidden bg-secondary-dark shadow-xl">
+            <a href="index.php" class="block px-4 py-2 text-sm hover:bg-gray-700">Trang Chủ</a>
+            <a href="#featured" class="block px-4 py-2 text-sm hover:bg-gray-700">Sản Phẩm</a>
+            <a href="tin_tuc.php" class="block px-4 py-2 text-sm hover:bg-gray-700">Tin Tức</a>
+            <a href="#features" class="block px-4 py-2 text-sm hover:bg-gray-700">Đặc Điểm</a>
+            <a href="gio_hang.php" class="block px-4 py-2 text-sm hover:bg-gray-700">Giỏ Hàng (<?php echo $cart_count; ?>)</a>
+            
+            <?php if (isset($_SESSION['id_nguoi_dung'])): ?>
+                 <a href="thong_tin_tai_khoan.php" class="block px-4 py-2 text-sm hover:bg-gray-700">Tài khoản</a>
+                 <a href="dang_xuat.php" class="block px-4 py-2 text-sm hover:bg-gray-700">Đăng xuất</a>
+            <?php else: ?>
+                 <a href="dang_nhap.php" class="block px-4 py-2 text-sm hover:bg-gray-700">Đăng nhập</a>
+                 <a href="dang_ky.php" class="block px-4 py-2 text-sm hover:bg-gray-700">Đăng ký</a>
+            <?php endif; ?>
+
+            <a href="lien_he.php" class="block px-4 py-2 text-sm hover:bg-gray-700 bg-accent m-2 rounded-lg text-center">Liên Hệ</a>
+        </div>
+    </header>
+
+    <main>
+        <section id="hero" class="relative overflow-hidden pt-16 md:pt-24 pb-16">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-between">
+                <div class="lg:w-1/2 text-center lg:text-left mb-10 lg:mb-0 animate-on-scroll">
+                    <span class="text-accent text-lg font-semibold uppercase tracking-wider mb-3 block">
+                        Công Nghệ Đỉnh Cao
+                    </span>
+                    <h1 class="text-5xl md:text-7xl font-extrabold leading-tight mb-6">
+                        <?php echo $hero_title; ?>
+                    </h1>
+                    <p class="text-gray-400 text-lg mb-8 max-w-lg mx-auto lg:mx-0">
+                        <?php echo htmlspecialchars($hero_subtitle); ?>
+                    </p>
+                    <div class="flex flex-col sm:flex-row justify-center lg:justify-start space-y-4 sm:space-y-0 sm:space-x-4">
+                        <a href="<?php echo htmlspecialchars($hero_cta_link); ?>" class="bg-accent text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:bg-accent-hover transition duration-300 transform hover:scale-105">
+                            Xem Sản Phẩm Ngay
+                        </a>
+                    </div>
+                </div>
+
+                <div class="lg:w-1/2 relative flex justify-center lg:justify-end animate-on-scroll" style="transition-delay: 200ms;">
+                    <?php echo $hero_image_html; // In ra HTML của ảnh (hoặc mockup) ?>
+                </div>
+            </div>
+        </section>
+
+        <section id="featured" class="py-16 md:py-24 bg-secondary-dark">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-4xl font-bold text-center mb-4 animate-on-scroll">Sản Phẩm Nổi Bật</h2>
+                <p class="text-xl text-center text-gray-400 mb-12 animate-on-scroll">Những chiếc điện thoại được săn đón nhất hiện nay.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    
+                    <?php if (empty($featured_products)): ?>
+                        <p class="text-center col-span-3 text-gray-400">Chưa có sản phẩm nổi bật nào.</p>
+                    <?php else: ?>
+                        <?php foreach ($featured_products as $index => $sp): ?>
+                            <?php $gia_data = tinhGiaHienThi($sp, $hom_nay); ?>
+                            
+                            <div class="bg-primary-dark p-6 rounded-2xl shadow-2xl hover:shadow-accent/50 transition duration-300 transform hover:-translate-y-2 border border-gray-700 animate-on-scroll"
+                                 style="transition-delay: <?php echo $index * 100; ?>ms;">
+                                
+                                <div class="w-full h-48 mb-4 flex items-center justify-center bg-gray-700/50 rounded-xl overflow-hidden group">
+                                    <?php 
+                                    $anh_path = 'tai_len/san_pham/' . ($sp['anh_dai_dien'] ?? 'default.png');
+                                    if (empty($sp['anh_dai_dien']) || !file_exists($anh_path)) {
+                                        $anh_path = 'https://placehold.co/300x300/1F2937/4F46E5?text=No+Image';
+                                    }
+                                    ?>
+                                    <a href="chi_tiet_san_pham.php?id=<?php echo $sp['id']; ?>" class="block w-full h-full">
+                                        <img src="<?php echo $anh_path; ?>" alt="<?php echo htmlspecialchars($sp['ten_san_pham']); ?>" 
+                                             class="object-contain w-full h-full p-2 transition duration-300 group-hover:scale-105">
+                                    </a>
+                                </div>
+                                <h3 class="text-2xl font-bold mb-2 truncate"><?php echo htmlspecialchars($sp['ten_san_pham']); ?></h3>
+                                <p class="text-gray-400 mb-4 h-20 overflow-hidden">
+                                    <?php echo htmlspecialchars($sp['ten_hang']); ?> - 
+                                    <?php // Lấy mô tả ngắn, nếu không có thì dùng tên
+                                    echo htmlspecialchars($sp['mo_ta_ngan'] ?? $sp['ten_san_pham']); 
+                                    ?>
+                                </p>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-3xl font-extrabold text-accent">
+                                        <?php echo number_format($gia_data['gia_hien_thi'], 0, ',', '.'); ?>đ
+                                        <?php if ($gia_data['gia_cu']): ?>
+                                            <span class="text-gray-500 text-lg line-through ml-2"><?php echo number_format($gia_data['gia_cu'], 0, ',', '.'); ?>đ</span>
+                                        <?php endif; ?>
+                                    </span>
+                                    
+                                    <form action="xu_ly_gio_hang.php" method="POST" class="add-to-cart-form" data-turbolinks="false">
+                                        <input type="hidden" name="action" value="add">
+                                        <input type="hidden" name="id_san_pham" value="<?php echo $sp['id']; ?>">
+                                        <input type="hidden" name="so_luong" value="1">
+                                        <button type="submit" class="bg-accent text-white py-2 px-4 rounded-lg font-semibold hover:bg-accent-hover transition duration-300">
+                                            Mua Ngay
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="py-16 md:py-24">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-4xl font-bold text-center mb-4 animate-on-scroll">Tại Sao Chọn Chúng Tôi?</h2>
+                <p class="text-xl text-center text-gray-400 mb-12 animate-on-scroll">Cam kết mang lại trải nghiệm mua sắm an tâm và hài lòng nhất.</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="text-center p-6 bg-secondary-dark rounded-xl shadow-lg border border-gray-700 animate-on-scroll" style="transition-delay: 100ms;">
+                        <div class="p-4 inline-block bg-accent/20 rounded-full mb-4">
+                            <svg class="w-8 h-8 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.008 12.008 0 0012 21.018a12.008 12.008 0 008.618-18.082z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Giao Hàng Siêu Tốc</h3>
+                        <p class="text-gray-400">Nhận hàng chỉ trong 24h nội thành. Miễn phí vận chuyển toàn quốc.</p>
+                    </div>
+
+                    <div class="text-center p-6 bg-secondary-dark rounded-xl shadow-lg border border-gray-700 animate-on-scroll" style="transition-delay: 200ms;">
+                        <div class="p-4 inline-block bg-accent/20 rounded-full mb-4">
+                            <svg class="w-8 h-8 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c1.657 0 3 .895 3 2s-1.343 2-3 2h-1v6m0-6H9m1 10a2 2 0 11-4 0 2 2 0 014 0zM12 4v4m-3 0h6m1 4h2m-2 4h2m-2 4h2"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Bảo Hành Chính Hãng</h3>
+                        <p class="text-gray-400">Bảo hành 1 đổi 1 lên đến 24 tháng. Yên tâm sử dụng dài lâu.</p>
+                    </div>
+
+                    <div class="text-center p-6 bg-secondary-dark rounded-xl shadow-lg border border-gray-700 animate-on-scroll" style="transition-delay: 300ms;">
+                        <div class="p-4 inline-block bg-accent/20 rounded-full mb-4">
+                            <svg class="w-8 h-8 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m4 2h10a2 2 0 002-2v-6a2 2 0 00-2-2H9.5L9 9l4-4M7 21a2 2 0 100-4 2 2 0 000 4zm12 0a2 2 0 100-4 2 2 0 000 4z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Giá Tốt Nhất Thị Trường</h3>
+                        <p class="text-gray-400">Cam kết giá cạnh tranh. Luôn có ưu đãi độc quyền dành cho bạn.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="py-16 bg-accent rounded-2xl shadow-lg animate-on-scroll">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Đừng Bỏ Lỡ Cơ Hội!</h2>
+                <p class="text-lg text-indigo-100 mb-8">Đăng ký nhận bản tin để được giảm giá 10% cho đơn hàng đầu tiên.</p>
+                
+                <form class="flex flex-col sm:flex-row justify-center max-w-lg mx-auto space-y-4 sm:space-y-0 sm:space-x-4">
+                    <input type="email" placeholder="Nhập email của bạn..." class="w-full sm:w-2/3 p-3 rounded-xl border-2 border-white focus:outline-none focus:ring-2 focus:ring-indigo-300 text-gray-900" required>
+                    <button type="submit" class="w-full sm:w-1/3 bg-white text-accent font-bold py-3 px-6 rounded-xl hover:bg-indigo-100 transition duration-300 transform hover:scale-105">
+                        Đăng Ký
+                    </button>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-primary-dark border-t border-gray-700 py-12 mt-20">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 md:grid-cols-4 gap-8 text-gray-400">
+            <div>
+                <a href="#" class="text-xl font-extrabold tracking-tight text-white mb-4 block">
+                    DIEN THOAI<span class="text-accent">.STORE</span>
+                </a>
+                <p class="text-sm">Chuyên cung cấp điện thoại thông minh chính hãng, giá tốt nhất.</p>
+            </div>
+            <div>
+                <h4 class="text-lg font-semibold text-white mb-4">Sản Phẩm</h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="#featured" class="hover:text-accent">Sản Phẩm Mới</a></li>
+                    <li><a href="#" class="hover:text-accent">Khuyến mãi</a></li>
+                    <li><a href="#" class="hover:text-accent">Phụ Kiện</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-lg font-semibold text-white mb-4">Hỗ Trợ</h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="lien_he.php" class="hover:text-accent">Liên hệ</a></li>
+                    <li><a href="phan_anh.php" class="hover:text-accent">Phản ánh</a></li>
+                    <li><a href="don_hang_cua_toi.php" class="hover:text-accent">Tra cứu đơn hàng</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-lg font-semibold text-white mb-4">Liên Hệ</h4>
+                <p class="text-sm">
+                    Email: support@dienthoai.store<br>
+                    Điện thoại: (090) 123 4567
+                </p>
+                <div class="flex space-x-4 mt-4">
+                    <a href="#" class="text-gray-400 hover:text-accent transition duration-200">FB</a>
+                    <a href="#" class="text-gray-400 hover:text-accent transition duration-200">IG</a>
+                    <a href="#" class="text-gray-400 hover:text-accent transition duration-200">Zalo</a>
+                </div>
+            </div>
+        </div>
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-6 border-t border-gray-800 text-center text-sm text-gray-500">
+            &copy; <?php echo date("Y"); ?> DIEN THOAI STORE. Bảo lưu mọi quyền.
+        </div>
+    </footer>
+
+    <div id="toast-notification" class="">
+        <div id="toast-icon">
+            </div>
+        <div class="text-sm font-normal" id="toast-message">
+            </div>
+        <button type="button" id="toast-close" class="-mx-1.5 -my-1.5 ml-auto">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        let toastTimer;
+
+        // 1. Hàm hiển thị Toast (Lấy từ template)
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast-notification');
+            const toastMessage = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            if (!toast || !toastMessage || !toastIcon) return;
+            clearTimeout(toastTimer);
+
+            toastMessage.textContent = message;
+            toast.classList.remove('success', 'error'); 
+
+            if (type === 'success') {
+                toastIcon.innerHTML = '<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>';
+                toast.classList.add('success');
+            } else {
+                toastIcon.innerHTML = '<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" /></svg>';
+                toast.classList.add('error');
+            }
+            
+            toast.classList.add('show');
+            
+            toastTimer = setTimeout(function () {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // 2. Hàm cập nhật icon giỏ hàng
+        function updateCartBadge(count) {
+            const badge = document.getElementById('cart-badge');
+            if (badge) {
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+        
+        // 3. Logic chính
+        document.addEventListener("DOMContentLoaded", function () {
+            
+            // --- Xử lý AJAX "Thêm vào giỏ" ---
+            const allForms = document.querySelectorAll('.add-to-cart-form');
+            allForms.forEach(form => {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault(); 
+                    const formData = new FormData(this);
+                    
+                    // Thêm hiệu ứng loading cho nút (tùy chọn)
+                    const button = form.querySelector('button');
+                    const originalText = button.innerHTML;
+                    button.innerHTML = 'Đang thêm...';
+                    button.disabled = true;
+                    
+                    fetch('xu_ly_gio_hang.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            updateCartBadge(data.new_cart_count);
+                            showToast('Đã thêm vào giỏ hàng!', 'success');
+                        } else {
+                            showToast(data.message || 'Lỗi: Không thể thêm vào giỏ.', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Lỗi Fetch:', error);
+                        showToast('Lỗi kết nối. Vui lòng thử lại.', 'error');
+                    })
+                    .finally(() => {
+                        // Trả lại trạng thái nút
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    });
+                });
+            });
+            
+            // --- Xử lý Nút đóng Toast ---
+            const toastCloseBtn = document.getElementById('toast-close');
+            const toast = document.getElementById('toast-notification');
+            if (toastCloseBtn && toast) {
+                toastCloseBtn.addEventListener('click', function () {
+                    toast.classList.remove('show');
+                    clearTimeout(toastTimer);
+                });
+            }
+
+            // --- Xử lý Mobile Menu Toggle ---
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if(mobileMenuBtn && mobileMenu) {
+                mobileMenuBtn.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+
+            // --- Xử lý Hiệu ứng cuộn (IntersectionObserver) ---
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        observer.unobserve(entry.target); // Chỉ animate một lần
+                    }
+                });
+            }, { 
+                threshold: 0.1 // Kích hoạt khi 10% phần tử hiển thị
+            });
+            // Gắn observer
+            document.querySelectorAll('.animate-on-scroll').forEach(el => {
+                observer.observe(el);
+            });
+        });
+    </script>
+</body>
+</html>

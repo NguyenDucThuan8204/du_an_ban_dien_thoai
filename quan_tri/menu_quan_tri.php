@@ -41,7 +41,13 @@ function laTrangActive($ten_file_menu, $ten_file_hien_tai) {
         <li<?php echo laTrangActive('quan_ly_phan_hoi.php', $ten_file_hien_tai); ?>>
             <a href="quan_ly_phan_hoi.php"><i class="fas fa-inbox"></i>Quản lý Phản hồi</a>
         </li>
-        
+        <li class="<?php echo ($current_page == 'quan_ly_danh_gia.php') ? 'active' : ''; ?>">
+            <a href="quan_ly_danh_gia.php"><i class="fas fa-star-half-alt"></i> Quản lý Đánh Giá</a>
+        </li>
+
+        <li class="<?php echo ($current_page == 'quan_ly_quang_cao.php') ? 'active' : ''; ?>">
+            <a href="quan_ly_quang_cao.php"><i class="fas fa-bullhorn"></i> Quản lý Quảng Cáo</a>
+        </li>
         <li class="back-to-site">
             <a href="../index.php" target="_blank"><i class="fas fa-globe"></i>Xem Trang chủ</a>
         </li>

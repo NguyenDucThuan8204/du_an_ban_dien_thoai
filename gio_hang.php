@@ -17,14 +17,17 @@ $page_title = "Giỏ Hàng";
 // 2. LẤY SẢN PHẨM TRONG GIỎ
 $cart_items = [];
 $tong_tien_hang = 0;
-$phi_van_chuyen = 30000; // Mặc định
+$phi_van_chuyen = 30000; 
 $id_nguoi_dung = $_SESSION['id_nguoi_dung'] ?? 0;
+$hom_nay = date('Y-m-d'); 
 
 if ($id_nguoi_dung > 0) {
     // --- LẤY TỪ CSDL (ĐÃ ĐĂNG NHẬP) ---
+    // (SỬA LỖI GIÁ) Thêm các cột giảm giá vào SELECT
     $sql_cart = "SELECT 
                     g.id_san_pham, g.so_luong, 
-                    s.ten_san_pham, s.gia_ban, s.anh_dai_dien, s.so_luong_ton
+                    s.ten_san_pham, s.gia_ban, s.anh_dai_dien, s.so_luong_ton,
+                    s.gia_goc, s.phan_tram_giam_gia, s.ngay_bat_dau_giam, s.ngay_ket_thuc_giam
                  FROM gio_hang g 
                  JOIN san_pham s ON g.id_san_pham = s.id 
                  WHERE g.id_nguoi_dung = ?";
@@ -34,7 +37,25 @@ if ($id_nguoi_dung > 0) {
     $result_cart = $stmt_cart->get_result();
     
     while ($row = $result_cart->fetch_assoc()) {
-        $row['thanh_tien'] = $row['gia_ban'] * $row['so_luong'];
+        // (SỬA LỖI GIÁ) LOGIC TÍNH GIÁ GIẢM
+        $gia_hien_thi = (float)$row['gia_ban'];
+        $gia_cu = !empty($row['gia_goc']) ? (float)$row['gia_goc'] : null;
+        $dang_giam_gia_theo_ngay = (
+            !empty($row['ngay_bat_dau_giam']) && !empty($row['ngay_ket_thuc_giam']) &&
+            $hom_nay >= $row['ngay_bat_dau_giam'] && $hom_nay <= $row['ngay_ket_thuc_giam']
+        );
+        if ($dang_giam_gia_theo_ngay && !empty($row['phan_tram_giam_gia'])) {
+            $gia_cu = $row['gia_ban']; 
+            $gia_hien_thi = $gia_cu * (1 - (float)$row['phan_tram_giam_gia'] / 100);
+        } 
+        else if (!empty($gia_cu) && $gia_cu > $gia_hien_thi) {
+            // Giảm giá theo gia_ban vs gia_goc
+        }
+        else { $gia_cu = null; }
+        
+        $row['gia_hien_thi'] = $gia_hien_thi; // Giá cuối cùng
+        $row['gia_cu'] = $gia_cu; // Giá cũ (nếu có)
+        $row['thanh_tien'] = $gia_hien_thi * $row['so_luong']; // Dùng giá đã giảm
         $tong_tien_hang += $row['thanh_tien'];
         $cart_items[] = $row;
     }
@@ -44,7 +65,10 @@ if ($id_nguoi_dung > 0) {
         $item_ids = array_keys($_SESSION['cart']);
         $placeholders = implode(',', array_fill(0, count($item_ids), '?'));
         
-        $sql_check_products = "SELECT id, ten_san_pham, gia_ban, anh_dai_dien, so_luong_ton FROM san_pham WHERE id IN ($placeholders)";
+        // (SỬA LỖI GIÁ) Thêm các cột giảm giá
+        $sql_check_products = "SELECT id, ten_san_pham, gia_ban, anh_dai_dien, so_luong_ton,
+                                      gia_goc, phan_tram_giam_gia, ngay_bat_dau_giam, ngay_ket_thuc_giam 
+                               FROM san_pham WHERE id IN ($placeholders)";
         $stmt_check = $conn->prepare($sql_check_products);
         $types = str_repeat('i', count($item_ids));
         $stmt_check->bind_param($types, ...$item_ids);
@@ -54,8 +78,27 @@ if ($id_nguoi_dung > 0) {
         while ($row = $products_result->fetch_assoc()) {
             $id_sp = $row['id'];
             $so_luong = (int)($_SESSION['cart'][$id_sp]['so_luong'] ?? 0);
+            
+            // (SỬA LỖI GIÁ) LOGIC TÍNH GIÁ GIẢM
+            $gia_hien_thi = (float)$row['gia_ban'];
+            $gia_cu = !empty($row['gia_goc']) ? (float)$row['gia_goc'] : null;
+            $dang_giam_gia_theo_ngay = (
+                !empty($row['ngay_bat_dau_giam']) && !empty($row['ngay_ket_thuc_giam']) &&
+                $hom_nay >= $row['ngay_bat_dau_giam'] && $hom_nay <= $row['ngay_ket_thuc_giam']
+            );
+            if ($dang_giam_gia_theo_ngay && !empty($row['phan_tram_giam_gia'])) {
+                $gia_cu = $row['gia_ban']; 
+                $gia_hien_thi = $gia_cu * (1 - (float)$row['phan_tram_giam_gia'] / 100);
+            } 
+            else if (!empty($gia_cu) && $gia_cu > $gia_hien_thi) {
+                // Giảm giá theo gia_ban vs gia_goc
+            }
+            else { $gia_cu = null; }
+            
             $row['so_luong'] = $so_luong;
-            $row['thanh_tien'] = $row['gia_ban'] * $so_luong;
+            $row['gia_hien_thi'] = $gia_hien_thi;
+            $row['gia_cu'] = $gia_cu;
+            $row['thanh_tien'] = $gia_hien_thi * $so_luong;
             $tong_tien_hang += $row['thanh_tien'];
             $cart_items[] = $row;
         }
@@ -71,7 +114,6 @@ require 'dung_chung/dau_trang.php';
 ?>
 
 <style>
-    /* (CSS của bạn giữ nguyên) */
     .cart-page-title { text-align: center; font-size: 2rem; color: #333; margin-bottom: 20px; }
     .cart-layout { display: grid; grid-template-columns: 2.5fr 1.5fr; gap: 30px; align-items: flex-start; }
     .cart-items-list { background: #fff; border-radius: 8px; padding: 15px; box-shadow: var(--shadow); }
@@ -82,8 +124,16 @@ require 'dung_chung/dau_trang.php';
     .cart-item-info a { font-weight: bold; color: #333; text-decoration: none; font-size: 1.1em; }
     .cart-item-info a:hover { color: var(--primary-color); }
     .cart-item-info .item-price { color: var(--danger-color); font-weight: 500; margin-top: 5px; }
+    /* (MỚI) CSS Cho giá cũ */
+    .cart-item-info .item-old-price {
+        font-size: 0.9em;
+        color: #999;
+        text-decoration: line-through;
+        margin-left: 8px;
+    }
+    
     .cart-item-qty { width: 120px; }
-    .cart-item-qty input { width: 60px; text-align: center; padding: 8px; font-size: 1em; border: 1px solid #ccc; border-radius: 4px; }
+    .cart-item-qty input { width: 60px; text-align: center; } /* Đã được style bởi CSS chung */
     .cart-item-subtotal { font-weight: bold; width: 120px; text-align: right; }
     .cart-item-remove button { background: none; border: none; color: #999; font-size: 1.2rem; cursor: pointer; }
     .cart-item-remove button:hover { color: var(--danger-color); }
@@ -135,7 +185,12 @@ require 'dung_chung/dau_trang.php';
                             <a href="chi_tiet_san_pham.php?id=<?php echo $item['id_san_pham']; ?>">
                                 <?php echo htmlspecialchars($item['ten_san_pham']); ?>
                             </a>
-                            <div class="item-price"><?php echo number_format($item['gia_ban'], 0, ',', '.'); ?>đ</div>
+                            <div class="item-price">
+                                <?php echo number_format($item['gia_hien_thi'], 0, ',', '.'); ?>đ
+                                <?php if ($item['gia_cu']): ?>
+                                    <span class="item-old-price"><?php echo number_format($item['gia_cu'], 0, ',', '.'); ?>đ</span>
+                                <?php endif; ?>
+                            </div>
                         </div>
                         
                         <div class="cart-item-qty">
@@ -183,7 +238,7 @@ require 'dung_chung/dau_trang.php';
                     </div>
                     
                     <div class="cart-actions">
-                        <button type="submit" class="btn btn-checkout">
+                        <button type="submit" class="btn btn-checkout btn-submit">
                             <i class="fas fa-credit-card"></i> Tiến hành Thanh toán
                         </button>
                         <a href="index.php" class="btn btn-continue-shopping">
@@ -208,7 +263,7 @@ require 'dung_chung/dau_trang.php';
         .then(data => {
             if (data.success) {
                 // Cập nhật header
-                const cartBadge = document.querySelector('.cart-badge');
+                const cartBadge = document.getElementById('cart-badge');
                 if (cartBadge) {
                     if (data.new_cart_count > 0) {
                         cartBadge.textContent = data.new_cart_count;

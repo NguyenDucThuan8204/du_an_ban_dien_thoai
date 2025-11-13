@@ -10,7 +10,8 @@ if (!isset($_SESSION['id_nguoi_dung'])) {
     exit();
 }
 $id_nguoi_dung = $_SESSION['id_nguoi_dung'];
-$upload_dir_bills = 'tai_len/bills/'; // Thư mục lưu bill
+$upload_dir_bills = 'tai_len/bills/'; 
+$hom_nay = date('Y-m-d'); // (MỚI) Thêm ngày để tính giá
 
 // 2. HÀM HỖ TRỢ UPLOAD ẢNH (Cho Bill)
 function xu_ly_tai_anh_bill($file_input_name, $upload_dir) {
@@ -47,9 +48,7 @@ $so_dien_thoai_nhan = $conn->real_escape_string($_POST['so_dien_thoai_nhan']);
 $dia_chi_giao_hang = $conn->real_escape_string($_POST['dia_chi_giao_hang']);
 $ghi_chu = $conn->real_escape_string($_POST['ghi_chu']);
 $phuong_thuc_thanh_toan = $conn->real_escape_string($_POST['phuong_thuc_thanh_toan']);
-$phuong_thuc_van_chuyen = "Giao hàng tiêu chuẩn"; // Giả sử
-
-// Lấy mã đơn hàng từ session (đã tạo ở trang thanh toán)
+$phuong_thuc_van_chuyen = "Giao hàng tiêu chuẩn"; 
 $ma_don_hang = $_SESSION['ma_don_hang_tam'] ?? ('DH_LOI' . time());
 
 // 4. (SỬA) XỬ LÝ THANH TOÁN ONLINE VÀ UPLOAD BILL
@@ -59,21 +58,20 @@ $trang_thai_moi = 'moi'; // Mặc định cho COD
 if ($phuong_thuc_thanh_toan == 'online') {
     $anh_bill_filename = xu_ly_tai_anh_bill('anh_bill_thanh_toan', $upload_dir_bills);
     
-    // Nếu chọn Online mà không upload bill -> Báo lỗi
     if (empty($anh_bill_filename)) {
         $_SESSION['thong_bao_loi_thanh_toan'] = "Vui lòng tải lên ảnh chụp bill thanh toán để hoàn tất.";
         header("Location: thanh_toan.php"); // "Đá về"
         exit();
     }
-    
-    // Nếu upload thành công -> Đặt trạng thái chờ
     $trang_thai_moi = 'cho_xac_nhan_thanh_toan';
 }
 
-// 5. TÍNH TOÁN LẠI TỔNG TIỀN (Bảo mật)
+// 5. (SỬA LỖI GIÁ) TÍNH TOÁN LẠI TỔNG TIỀN (Bảo mật)
 $item_ids = array_keys($items_to_buy);
 $placeholders = implode(',', array_fill(0, count($item_ids), '?'));
-$sql_check_products = "SELECT id, ten_san_pham, gia_ban FROM san_pham WHERE id IN ($placeholders)";
+// (SỬA) Lấy tất cả cột giá
+$sql_check_products = "SELECT id, ten_san_pham, gia_ban, gia_goc, phan_tram_giam_gia, ngay_bat_dau_giam, ngay_ket_thuc_giam 
+                       FROM san_pham WHERE id IN ($placeholders)";
 $stmt_check = $conn->prepare($sql_check_products);
 $stmt_check->bind_param(str_repeat('i', count($item_ids)), ...$item_ids);
 $stmt_check->execute();
@@ -83,29 +81,46 @@ $products_in_cart = [];
 $tong_tien_hang = 0;
 while ($row = $products_result->fetch_assoc()) {
     $so_luong_value = $items_to_buy[$row['id']];
-    // (SỬA) Kiểm tra xem $items_to_buy[$row['id']] là mảng hay số
     if (is_array($so_luong_value)) {
         $so_luong = (int)($so_luong_value['so_luong'] ?? 0);
     } else {
         $so_luong = (int)$so_luong_value;
     }
     
+    // (SỬA LỖI GIÁ) LOGIC TÍNH GIÁ GIẢM (BẮT BUỘC PHẢI GIỐNG HỆT)
+    $gia_hien_thi = (float)$row['gia_ban'];
+    $gia_cu = !empty($row['gia_goc']) ? (float)$row['gia_goc'] : null;
+    $dang_giam_gia_theo_ngay = (
+        !empty($row['ngay_bat_dau_giam']) && !empty($row['ngay_ket_thuc_giam']) &&
+        $hom_nay >= $row['ngay_bat_dau_giam'] && $hom_nay <= $row['ngay_ket_thuc_giam']
+    );
+    if ($dang_giam_gia_theo_ngay && !empty($row['phan_tram_giam_gia'])) {
+        $gia_cu = $row['gia_ban']; 
+        $gia_hien_thi = $gia_cu * (1 - (float)$row['phan_tram_giam_gia'] / 100);
+    } 
+    else if (!empty($gia_cu) && $gia_cu > $gia_hien_thi) { }
+    else { $gia_cu = null; }
+    
     $row['so_luong'] = $so_luong;
-    $row['thanh_tien'] = $row['gia_ban'] * $so_luong;
+    $row['gia_hien_thi'] = $gia_hien_thi; // Giá cuối cùng
+    $row['thanh_tien'] = $gia_hien_thi * $so_luong; // Dùng giá đã giảm
     $tong_tien_hang += $row['thanh_tien'];
     $products_in_cart[$row['id']] = $row; // Lưu lại để dùng ở bước 7
 }
-$phi_van_chuyen = 30000;
+
+$phi_van_chuyen = 0; // (SỬA) ĐỔI THÀNH 0
 $so_tien_giam_gia = $_SESSION['checkout_discount_amount'] ?? 0;
 $ma_giam_gia = $_SESSION['checkout_discount_code'] ?? null;
 $id_ma_giam_gia = $_SESSION['id_ma_giam_gia'] ?? null;
-$tong_tien_final = $tong_tien_hang + $phi_van_chuyen - $so_tien_giam_gia;
 
+// (SỬA) Tính toán tổng tiền cuối cùng (phải giống hệt xu_ly_giam_gia.php)
+// (Lưu ý: $so_tien_giam_gia là tiền từ coupon, $tong_tien_hang là tiền hàng đã giảm)
+$tong_tien_final = $tong_tien_hang + $phi_van_chuyen - $so_tien_giam_gia;
 
 // 6. GHI VÀO CSDL (TRANSACTION)
 $conn->begin_transaction();
 try {
-    // 6.1. (SỬA) Thêm `trang_thai_don_hang` và `anh_bill_thanh_toan`
+    // 6.1. INSERT VÀO `don_hang`
     $sql_don_hang = "INSERT INTO don_hang 
         (id_nguoi_dung, ma_don_hang, ten_nguoi_nhan, so_dien_thoai_nhan, dia_chi_giao_hang, ghi_chu, 
          tong_tien, id_ma_giam_gia, so_tien_giam_gia, ma_giam_gia_da_ap, 
@@ -134,8 +149,9 @@ try {
 
     foreach ($products_in_cart as $id_sp => $item) {
         $mau_sac = 'Mặc định'; // (Bạn nên thêm logic lấy màu sắc nếu có)
+        // (SỬA LỖI GIÁ) Lưu 'gia_hien_thi' vào CSDL, KHÔNG PHẢI 'gia_ban'
         $stmt_chi_tiet->bind_param("iissdi", 
-            $id_don_hang_moi, $id_sp, $item['ten_san_pham'], $mau_sac, $item['gia_ban'], $item['so_luong']
+            $id_don_hang_moi, $id_sp, $item['ten_san_pham'], $mau_sac, $item['gia_hien_thi'], $item['so_luong']
         );
         $stmt_chi_tiet->execute();
         
@@ -175,7 +191,6 @@ try {
     
 } catch (Exception $e) {
     $conn->rollback();
-    // (Xóa file bill nếu lỡ upload mà bị lỗi CSDL)
     if ($anh_bill_filename && file_exists($upload_dir_bills . $anh_bill_filename)) {
         @unlink($upload_dir_bills . $anh_bill_filename);
     }

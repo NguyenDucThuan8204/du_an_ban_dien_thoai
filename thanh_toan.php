@@ -2,15 +2,14 @@
 // (MỚI) DÒNG NÀY SỬA LỖI CACHE TURBOLINKS
 $page_meta_tags = '<meta name="turbolinks-cache-control" content="no-cache">';
 
-// 1. GỌI LOGIC TRƯỚC (PHẢI CHẠY TRƯỚC HTML)
+// 1. GỌI LOGIC TRƯỚC
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 require 'dung_chung/ket_noi_csdl.php';
 
-// (MỚI) ĐỌC THÔNG BÁO LỖI TỪ dat_hang.php (NẾU BỊ CHUYỂN HƯỚNG VỀ)
 $thong_bao_loi_dat_hang = $_SESSION['thong_bao_loi_thanh_toan'] ?? "";
-unset($_SESSION['thong_bao_loi_thanh_toan']); // Xóa ngay sau khi đọc
+unset($_SESSION['thong_bao_loi_thanh_toan']); 
 
 // 2. KIỂM TRA ĐĂNG NHẬP
 if (!isset($_SESSION['id_nguoi_dung'])) {
@@ -22,34 +21,29 @@ $id_nguoi_dung = $_SESSION['id_nguoi_dung'];
 
 // 3. (SỬA LỖI "TRANG TRẮNG") LẤY DỮ LIỆU TỪ POST
 if (isset($_POST['selected_items']) && !empty($_POST['selected_items'])) {
-    // Nếu có dữ liệu POST mới, tạo session checkout
     $_SESSION['checkout_items'] = $_POST['selected_items'];
-    
-    // (MỚI) Reset giảm giá khi có giỏ hàng mới
-    unset($_SESSION['checkout_discount_amount']);
-    unset($_SESSION['checkout_discount_code']);
-    unset($_SESSION['id_ma_giam_gia']);
-    
+    unset($_SESSION['checkout_discount_amount'], $_SESSION['checkout_discount_code'], $_SESSION['id_ma_giam_gia']);
 } 
-// Nếu không có POST (ví dụ: F5, hoặc lỗi quay lại), dùng session cũ (nếu có)
 elseif (!isset($_SESSION['checkout_items']) || empty($_SESSION['checkout_items'])) {
-    // Nếu không có POST và cũng không có session -> lỗi
     header("Location: gio_hang.php");
     exit();
 }
-// Nếu không, $items_to_buy sẽ dùng session cũ
 $items_to_buy = $_SESSION['checkout_items'];
 
 // 4. LOGIC TÍNH TOÁN
 $tong_tien_hang = 0;
-$phi_van_chuyen = 30000;
-$so_tien_giam_gia = $_SESSION['checkout_discount_amount'] ?? 0; // Đọc lại session giảm giá
+$phi_van_chuyen = 0; // (SỬA) ĐỔI THÀNH 0
+$so_tien_giam_gia = $_SESSION['checkout_discount_amount'] ?? 0;
 $ma_giam_gia = $_SESSION['checkout_discount_code'] ?? null;
 $id_ma_giam_gia = $_SESSION['id_ma_giam_gia'] ?? null;
+$hom_nay = date('Y-m-d');
 
 $item_ids = array_keys($items_to_buy);
 $placeholders = implode(',', array_fill(0, count($item_ids), '?'));
-$sql_check_products = "SELECT id, ten_san_pham, gia_ban, anh_dai_dien FROM san_pham WHERE id IN ($placeholders)";
+// (SỬA LỖI GIÁ) Thêm các cột giảm giá
+$sql_check_products = "SELECT id, ten_san_pham, gia_ban, anh_dai_dien, 
+                              gia_goc, phan_tram_giam_gia, ngay_bat_dau_giam, ngay_ket_thuc_giam
+                       FROM san_pham WHERE id IN ($placeholders)";
 $stmt_check = $conn->prepare($sql_check_products);
 $stmt_check->bind_param(str_repeat('i', count($item_ids)), ...$item_ids);
 $stmt_check->execute();
@@ -64,8 +58,23 @@ while ($row = $products_result->fetch_assoc()) {
         $so_luong = (int)$so_luong_value;
     }
     
+    // (SỬA LỖI GIÁ) LOGIC TÍNH GIÁ GIẢM
+    $gia_hien_thi = (float)$row['gia_ban'];
+    $gia_cu = !empty($row['gia_goc']) ? (float)$row['gia_goc'] : null;
+    $dang_giam_gia_theo_ngay = (
+        !empty($row['ngay_bat_dau_giam']) && !empty($row['ngay_ket_thuc_giam']) &&
+        $hom_nay >= $row['ngay_bat_dau_giam'] && $hom_nay <= $row['ngay_ket_thuc_giam']
+    );
+    if ($dang_giam_gia_theo_ngay && !empty($row['phan_tram_giam_gia'])) {
+        $gia_cu = $row['gia_ban']; 
+        $gia_hien_thi = $gia_cu * (1 - (float)$row['phan_tram_giam_gia'] / 100);
+    } 
+    else if (!empty($gia_cu) && $gia_cu > $gia_hien_thi) { }
+    else { $gia_cu = null; }
+
     $row['so_luong'] = $so_luong;
-    $row['thanh_tien'] = $row['gia_ban'] * $so_luong;
+    $row['gia_hien_thi'] = $gia_hien_thi; // (MỚI) Lưu giá đúng
+    $row['thanh_tien'] = $gia_hien_thi * $so_luong; // Dùng giá đã giảm
     $tong_tien_hang += $row['thanh_tien'];
     $products_in_cart[] = $row;
 }
@@ -119,40 +128,19 @@ require 'dung_chung/dau_trang.php';
 
     /* CỘT PHẢI (TÓM TẮT ĐƠN HÀNG) */
     .order-summary {
-        /* (MỚI) ĐÂY LÀ CHÌA KHÓA SỬA LỖI CUỘN TRANG */
         position: sticky;
         top: 90px; /* 70px (navbar) + 20px (khoảng cách) */
     }
-    .order-summary-item { 
-        display: flex; 
-        align-items: center; 
-        margin-bottom: 15px; 
-    }
-    .order-summary-item img { 
-        width: 50px; height: 50px; 
-        object-fit: contain; 
-        border: 1px solid #eee; 
-        border-radius: 4px; 
-        margin-right: 15px; 
-    }
+    .order-summary-item { display: flex; align-items: center; margin-bottom: 15px; }
+    .order-summary-item img { width: 50px; height: 50px; object-fit: contain; border: 1px solid #eee; border-radius: 4px; margin-right: 15px; }
     .item-details { flex-grow: 1; }
     .item-details span { display: block; }
     .item-details .item-name { font-weight: bold; }
     .item-details .item-qty { font-size: 0.9em; color: #555; }
     .item-price { font-weight: bold; }
     
-    .total-row { 
-        display: flex; 
-        justify-content: space-between; 
-        padding: 10px 0; 
-        border-top: 1px solid #eee; 
-        font-size: 1.1em; 
-    }
-    .total-row.final-total { 
-        font-size: 1.3em; 
-        font-weight: bold; 
-        color: var(--danger-color); 
-    }
+    .total-row { display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #eee; font-size: 1.1em; }
+    .total-row.final-total { font-size: 1.3em; font-weight: bold; color: var(--danger-color); }
     
     /* Mã giảm giá (đã có CSS chung) */
     .discount-code-form { display: flex; gap: 10px; margin-top: 15px; }

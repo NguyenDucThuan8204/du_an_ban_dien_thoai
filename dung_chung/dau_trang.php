@@ -21,7 +21,7 @@ if (isset($_SESSION['id_nguoi_dung'])) {
 } elseif (isset($_SESSION['cart'])) {
     // Đếm TỔNG SỐ LƯỢNG trong session
     foreach ($_SESSION['cart'] as $item) {
-        $cart_count += $item['so_luong'];
+        $cart_count += ($item['so_luong'] ?? 1); // Thêm ?? 1 để an toàn
     }
 }
 
@@ -233,7 +233,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         .filter-group label { font-size: 0.85em; color: #555; margin-bottom: 5px; font-weight: bold; }
         .filter-actions { grid-column: 1 / -1; display: flex; gap: 10px; }
         
-        /* (MỚI) CSS BẢNG (DÙNG CHO bai_viet_cua_toi.php) */
+        /* (MỚI) CSS BẢNG (DÙNG CHO bai_viet_cua_toi.php, don_hang_cua_toi.php) */
         .styled-table {
             width: 100%;
             border-collapse: collapse;
@@ -249,9 +249,20 @@ $current_page = basename($_SERVER['PHP_SELF']);
             padding: 5px 10px; border-radius: 4px; color: white;
             font-size: 12px; font-weight: bold; text-transform: uppercase;
         }
+        /* Nhãn trạng thái (User) */
         .status-hien_thi { background-color: #28a745; }
         .status-an { background-color: #6c757d; }
         .status-cho_duyet { background-color: #ffc107; color: #333; }
+        /* Nhãn trạng thái đơn hàng (User) */
+        .status-moi { background-color: #007bff; }
+        .status-dang_xu_ly { background-color: #17a2b8; }
+        .status-dang_giao { background-color: #ffc107; color: #333; }
+        .status-hoan_thanh { background-color: #28a745; }
+        .status-da_huy { background-color: #dc3545; }
+        .status-yeu_cau_huy { background-color: #fd7e14; }
+        .status-yeu_cau_tra_hang { background-color: #fd7e14; }
+        .status-da_hoan_tra { background-color: #6c757d; }
+        .status-cho_xac_nhan_thanh_toan { background-color: #fd7e14; }
         
         /* === FOOTER === */
         footer {
@@ -315,7 +326,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         
         <?php if (isset($_SESSION['id_nguoi_dung'])): ?>
             <a href="phan_anh.php" class="<?php echo ($current_page == 'phan_anh.php') ? 'active' : ''; ?>">
-                <i class="fas fa-flag"></i>Phản Ánh
+                <i class="fas fa-flag"></i>Gửi Phản Ánh
             </a>
         <?php endif; ?>
     </div>
@@ -332,6 +343,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </a>
         
         <?php if (isset($_SESSION['id_nguoi_dung'])): ?>
+            <a href="phan_hoi_cua_toi.php" title="Phản hồi của tôi" class="<?php echo ($current_page == 'phan_hoi_cua_toi.php') ? 'active' : ''; ?>">
+                <i class="fas fa-inbox"></i>
+            </a>
             <a href="bai_viet_cua_toi.php" title="Bài viết của tôi" class="<?php echo ($current_page == 'bai_viet_cua_toi.php' || $current_page == 'viet_bai.php') ? 'active' : ''; ?>">
                 <i class="fas fa-pen-square"></i>
             </a> 

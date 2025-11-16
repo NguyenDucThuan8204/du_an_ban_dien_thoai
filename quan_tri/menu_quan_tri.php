@@ -20,6 +20,9 @@ function laTrangActive($ten_file_menu, $ten_file_hien_tai) {
         <li<?php echo laTrangActive('index.php', $ten_file_hien_tai); ?>>
             <a href="index.php"><i class="fas fa-tachometer-alt"></i>Tổng Quan</a>
         </li>
+         <li<?php echo laTrangActive('bao_cao_thong_ke.php', $ten_file_hien_tai); ?>>
+            <a href="bao_cao_thong_ke.php"><i class="fas fa-tachometer-alt"></i>báo cáo thống kê</a>
+        </li>
         <li<?php echo laTrangActive('quan_ly_san_pham.php', $ten_file_hien_tai); ?>>
             <a href="quan_ly_san_pham.php"><i class="fas fa-box-open"></i>Quản lý Sản phẩm</a>
         </li>

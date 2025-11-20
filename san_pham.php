@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 <?php
 session_start();
 require 'dung_chung/ket_noi_csdl.php'; // File kết nối CSDL của bạn
@@ -420,6 +420,3 @@ require 'dung_chung/dau_trang.php';
 </body>
 </html>
 <?php require 'dung_chung/cuoi_trang.php'; ?>
-=======
-
->>>>>>> 24a0f531323a7f162e31125176983632f2d0950d

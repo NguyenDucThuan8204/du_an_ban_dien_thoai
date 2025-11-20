@@ -34,13 +34,9 @@ try {
     $sql_main = "SELECT 
                     SUM(ct.so_luong * ct.gia_luc_mua) AS tong_doanh_thu,
                     SUM(ct.so_luong) AS tong_san_pham_ban,
-<<<<<<< HEAD
                     -- ĐÃ SỬA THEO YÊU CẦU: Đảo ngược thành (Giá gốc - Giá bán)
                     -- LƯU Ý: Công thức này thực tế tính tổng GIẢM GIÁ (Discount) đã cấp.
                     SUM(ct.so_luong * (sp.gia_goc - ct.gia_luc_mua)) AS tong_loi_nhuan_uoc_tinh
-=======
-                    SUM(ct.so_luong * (ct.gia_luc_mua - sp.gia_goc)) AS tong_loi_nhuan_uoc_tinh
->>>>>>> 24a0f531323a7f162e31125176983632f2d0950d
                   FROM chi_tiet_don_hang ct
                   JOIN don_hang d ON ct.id_don_hang = d.id_don_hang
                   LEFT JOIN san_pham sp ON ct.id_san_pham = sp.id 

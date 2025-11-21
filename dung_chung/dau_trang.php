@@ -317,8 +317,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
         <a href="index.php" class="<?php echo ($current_page == 'index.php') ? 'active' : ''; ?>">
             <i class="fas fa-home"></i>Trang Chủ
         </a>
-         <a href="san_pham.php" class="<?php echo ($current_page == 'san_pham.php') ? 'active' : ''; ?>">
-            <i class="fas fa-home"></i>Sản phẩm
+    <a href="san_pham.php" class="<?php echo ($current_page == 'san_pham.php') ? 'active' : ''; ?>">
+        <i class="fas fa-mobile-alt"></i>Sản phẩm
+    </a>
         <a href="tin_tuc.php" class="<?php echo ($current_page == 'tin_tuc.php' || $current_page == 'chi_tiet_tin_tuc.php') ? 'active' : ''; ?>">
             <i class="fas fa-newspaper"></i>Tin Tức
         </a>

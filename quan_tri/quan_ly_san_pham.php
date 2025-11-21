@@ -727,11 +727,7 @@ if ($result_hang) {
                         <input type="hidden" id="gia_goc" name="gia_goc" value="<?php echo htmlspecialchars($edit_gia_goc); ?>">
                     </div>
                     <div class="form-group">
-<<<<<<< HEAD
                         <label for="gia_ban_display">Giá nhập (*)</label>
-=======
-                        <label for="gia_ban_display">Giá Bán (*)</label>
->>>>>>> 24a0f531323a7f162e31125176983632f2d0950d
                         <input type="text" id="gia_ban_display" 
                                value="<?php echo !empty($edit_gia_ban) ? number_format($edit_gia_ban, 0, ',', ',') : '0'; ?>" 
                                required inputmode="numeric">

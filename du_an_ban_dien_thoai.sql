@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 15, 2025 lúc 04:22 AM
+-- Thời gian đã tạo: Th10 24, 2025 lúc 03:53 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -57,29 +57,18 @@ CREATE TABLE `chi_tiet_don_hang` (
 --
 
 INSERT INTO `chi_tiet_don_hang` (`id_chi_tiet`, `id_don_hang`, `id_san_pham`, `ten_san_pham_luc_mua`, `so_luong`, `gia_luc_mua`, `mau_sac_luc_mua`) VALUES
-(1, 1, NULL, 'Điện thoại iPhone 17 Pro Max (8GB/1T)', 1, 40000000, 'cam'),
-(2, 2, NULL, 'Điện thoại iPhone 17 Pro Max (12GB/2T)', 3, 64000000, 'Đen'),
-(3, 3, NULL, 'Điện thoại iPhone 17 Pro Max (8GB/1T)', 1, 40000000, 'cam'),
-(4, 4, NULL, 'Điện thoại iPhone 17 Pro Max (8GB/1T)', 1, 40000000, 'cam'),
-(5, 5, NULL, 'Điện thoại iPhone 17 Pro Max (12GB/2T)', 1, 64000000, 'Đen'),
-(6, 6, NULL, 'Điện thoại iPhone 17 Pro Max (12GB/2T)', 1, 64000000, 'Đen'),
-(14, 11, 25, 'Samsung Galaxy A55', 1, 9990000, 'Xanh dương'),
-(16, 13, 24, 'Samsung Galaxy S24 Ultra', 1, 29990000, 'Đen'),
-(17, 13, 25, 'Samsung Galaxy A55', 2, 9990000, 'Xanh dương'),
-(18, 14, 24, 'Samsung Galaxy S24 Ultra', 1, 29990000, 'Đen'),
-(19, 15, 24, 'Samsung Galaxy S24 Ultra', 1, 29990000, 'Đen'),
-(20, 17, 25, 'Samsung Galaxy A55', 1, 9990000, 'Mặc định'),
-(21, 18, 24, 'Samsung Galaxy S24 Ultra', 1, 29990000, 'Mặc định'),
-(22, 18, 25, 'Samsung Galaxy A55', 2, 9990000, 'Mặc định'),
-(23, 19, 25, 'Samsung Galaxy A55', 2, 9990000, 'Mặc định'),
-(24, 20, 24, 'Samsung Galaxy S24 Ultra', 1, 29990000, 'Mặc định'),
-(25, 20, 38, 'Google Pixel 9 Pro', 1, 25990000, 'Mặc định'),
-(26, 21, 24, 'Samsung Galaxy S24 Ultra', 1, 29990000, 'Mặc định'),
-(27, 21, 25, 'Samsung Galaxy A55', 1, 9990000, 'Mặc định'),
-(28, 22, 25, 'Samsung Galaxy A55', 1, 8991000, 'Mặc định'),
-(29, 23, 24, 'Samsung Galaxy S24 Ultra', 1, 0, 'Mặc định'),
-(30, 24, 24, 'Samsung Galaxy S24 Ultra', 1, 0, 'Mặc định'),
-(31, 24, 25, 'Samsung Galaxy A55', 1, 8991000, 'Mặc định');
+(32, 25, 64, 'Samsung Galaxy S23 Ultra', 1, 20472000, 'Mặc định'),
+(33, 25, 65, 'Samsung Galaxy A54 5G', 1, 7582000, 'Mặc định'),
+(34, 26, 64, 'Samsung Galaxy S23 Ultra', 1, 20472000, 'Mặc định'),
+(35, 26, 65, 'Samsung Galaxy A54 5G', 1, 7582000, 'Mặc định'),
+(36, 27, 64, 'Samsung Galaxy S23 Ultra', 1, 20472000, 'Mặc định'),
+(37, 27, 66, 'iPhone 15 Pro Max', 1, 32154000, 'Mặc định'),
+(38, 28, 66, 'iPhone 15 Pro Max', 1, 32154000, 'Mặc định'),
+(39, 28, 74, 'OnePlus 11 Pro', 1, 16643100, 'Mặc định'),
+(40, 28, 78, 'Google Pixel 7 Pro', 1, 14784600, 'Mặc định'),
+(41, 29, 64, 'Samsung Galaxy S23 Ultra', 1, 20472000, 'Mặc định'),
+(42, 29, 68, 'Xiaomi 13 Pro', 1, 16525300, 'Mặc định'),
+(43, 29, 73, 'Vivo Y35', 1, 5256000, 'Mặc định');
 
 -- --------------------------------------------------------
 
@@ -106,7 +95,10 @@ CREATE TABLE `danh_gia_san_pham` (
 
 INSERT INTO `danh_gia_san_pham` (`id_danh_gia`, `id_san_pham`, `id_nguoi_dung`, `so_sao`, `noi_dung`, `ngay_danh_gia`, `trang_thai`, `id_admin_tra_loi`, `noi_dung_tra_loi`, `ngay_tra_loi`) VALUES
 (1, 25, 16, 5, 'sản phẩm đẹp', '2025-11-13 02:55:45', 'da_duyet', 16, 'cảm ơn đại ka', '2025-11-13 09:56:55'),
-(2, 24, 16, 5, 'sản phẩm như cc', '2025-11-13 02:59:34', 'da_duyet', NULL, NULL, NULL);
+(2, 24, 16, 5, 'sản phẩm như cc', '2025-11-13 02:59:34', 'da_duyet', NULL, NULL, NULL),
+(3, 66, 16, 5, 'sản phẩm tốt', '2025-11-21 12:58:14', 'da_duyet', NULL, NULL, NULL),
+(4, 74, 16, 5, 'cấu hình mạng', '2025-11-21 12:58:49', 'da_duyet', NULL, NULL, NULL),
+(5, 64, 16, 5, 'giá tốt', '2025-11-24 14:51:49', 'da_duyet', NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -140,24 +132,11 @@ CREATE TABLE `don_hang` (
 --
 
 INSERT INTO `don_hang` (`id_don_hang`, `id_nguoi_dung`, `ma_don_hang`, `ten_nguoi_nhan`, `so_dien_thoai_nhan`, `dia_chi_giao_hang`, `email_nguoi_nhan`, `tong_tien`, `id_ma_giam_gia`, `ghi_chu`, `ma_giam_gia_da_ap`, `so_tien_giam_gia`, `phuong_thuc_thanh_toan`, `phuong_thuc_van_chuyen`, `anh_bill_thanh_toan`, `trang_thai_thanh_toan`, `trang_thai_don_hang`, `ngay_dat`) VALUES
-(1, 16, 'DH176196621864', 'Thuận', '0386408024', '22', '20222027@eaut.edu.vn', 32000000, NULL, 'ko', 'DA663C7D31', 8000000, 'cod', NULL, NULL, 'chua_thanh_toan', 'da_hoan_tra', '2025-11-01 03:03:38'),
-(2, 16, 'DH176196736755', 'Thuận', '0386408024', '45', '20222027@eaut.edu.vn', 153600000, NULL, '45', 'DA663C7D31', 38400000, 'cod', NULL, NULL, 'chua_thanh_toan', 'da_huy', '2025-11-01 03:22:47'),
-(3, 16, 'DH176196791760', 'Thuận', '0386408024', '1', '20222027@eaut.edu.vn', 40000000, NULL, '', NULL, 0, 'cod', NULL, NULL, 'chua_thanh_toan', 'da_huy', '2025-11-01 03:31:57'),
-(4, NULL, 'DH176209873714', 'Thuận', '0386408029', '12', '20222012@eaut.edu.vn', 32000000, NULL, '12', 'DA663C7D31', 8000000, 'cod', NULL, NULL, 'chua_thanh_toan', 'hoan_thanh', '2025-11-02 15:52:17'),
-(5, 16, 'DH176209950273', 'Thuận', '0386408024', '123', '20222027@eaut.edu.vn', 64000000, NULL, 'có', NULL, 0, 'cod', NULL, NULL, 'chua_thanh_toan', 'da_huy', '2025-11-02 16:05:02'),
-(6, 16, 'DH176212889755', 'Thuận', '0386408024', '541', '20222027@eaut.edu.vn', 51200000, NULL, '1', 'DA663C7D31', 12800000, 'cod', NULL, NULL, 'chua_thanh_toan', 'hoan_thanh', '2025-11-03 00:14:57'),
-(11, 16, 'DH-690E10A71F1DE', 'Nguyễn Đức Thuận', '0386408024', 'số nhà 2, Phương Liễu, Bắc Ninh', '20222027@eaut.edu.vn', 9990000, NULL, '', NULL, 0, 'cod', NULL, NULL, 'chua_thanh_toan', 'da_huy', '2025-11-07 15:30:47'),
-(13, 19, 'DH-690E146B53674', 'Nguyễn Đức Thuận', '03864080241', '2, Phương Liễu, Bắc Ninh', 'thuannguyen822004@gmail.com', 44973000, NULL, '', 'DA!2222222', 4997000, 'cod', NULL, NULL, 'chua_thanh_toan', 'hoan_thanh', '2025-11-07 15:46:51'),
-(14, 16, 'DH-69113AF477A46', 'Nguyễn Đức Thuận đại ka', '0386408024', 'số nhà 2, Phương Liễu, Bắc Ninh', '20222027@eaut.edu.vn', 28490500, NULL, '', 'DA12HGGGG', 1499500, 'cod', NULL, NULL, 'chua_thanh_toan', 'hoan_thanh', '2025-11-10 01:08:04'),
-(15, 16, 'DH-69120E9F9B2F3', 'Nguyễn Đức Thuận đại ka', '0386408024', 'số nhà 2, Phương Liễu, Bắc Ninh', '20222027@eaut.edu.vn', 29990000, NULL, 'ok', NULL, 0, 'cod', NULL, NULL, 'chua_thanh_toan', 'hoan_thanh', '2025-11-10 16:11:11'),
-(17, 16, 'DH176287404116', 'Nguyễn Đức Thuận đại ka', '0386408024', ', Phương Liễu, Bắc Ninh', NULL, 10020000, NULL, '', NULL, 0, 'cod', 'Giao hàng tiêu chuẩn', NULL, 'chua_thanh_toan', 'moi', '2025-11-11 15:14:03'),
-(18, 16, 'DH176287427216', 'Nguyễn Đức Thuận đại ka', '0386408024', ', Phương Liễu, Bắc Ninh', NULL, 50000000, NULL, '', NULL, 0, 'cod', 'Giao hàng tiêu chuẩn', NULL, 'chua_thanh_toan', 'hoan_thanh', '2025-11-11 15:17:55'),
-(19, 16, 'DH176287544116', 'Nguyễn Đức Thuận đại ka', '0386408024', ', Phương Liễu, Bắc Ninh', NULL, 20010000, NULL, '', NULL, 0, '', 'Giao hàng tiêu chuẩn', 'bill_16_691358fcac06f1762875644.png', 'chua_thanh_toan', 'hoan_thanh', '2025-11-11 15:40:44'),
-(20, 16, 'DH176287579116', 'Nguyễn Đức Thuận đại ka', '0386408024', ', Phương Liễu, Bắc Ninh', NULL, 56010000, NULL, '', NULL, 0, 'cod', 'Giao hàng tiêu chuẩn', NULL, 'chua_thanh_toan', 'hoan_thanh', '2025-11-11 15:43:13'),
-(21, 16, 'DH176290803916', 'Nguyễn Đức Thuận đại ka', '0386408024', ', Phương Liễu, Bắc Ninh', NULL, 40010000, NULL, '', NULL, 0, 'cod', 'Giao hàng tiêu chuẩn', NULL, 'chua_thanh_toan', 'hoan_thanh', '2025-11-12 00:50:14'),
-(22, 16, 'DH176291905416', 'Nguyễn Đức Thuận đại ka', '0386408024', ', Phương Liễu, Bắc Ninh', NULL, 8091900, 113, '', 'DA1669248B2', 899100, 'cod', 'Giao hàng tiêu chuẩn', NULL, 'chua_thanh_toan', 'hoan_thanh', '2025-11-12 03:45:21'),
-(23, 16, 'DH176295689016', 'Nguyễn Đức Thuận đại ka', '0386408024', ', Phương Liễu, Bắc Ninh', NULL, 0, 113, '', 'DA1669248B2', 0, 'cod', 'Giao hàng tiêu chuẩn', NULL, 'chua_thanh_toan', 'hoan_thanh', '2025-11-12 14:14:57'),
-(24, 16, 'DH176295693916', 'Nguyễn Đức Thuận đại ka', '0386408024', ', Phương Liễu, Bắc Ninh', NULL, 8991000, NULL, '', NULL, 0, 'cod', 'Giao hàng tiêu chuẩn', NULL, 'chua_thanh_toan', 'hoan_thanh', '2025-11-12 14:15:57');
+(25, 16, 'DH176365486816', 'Nguyễn Đức Thuận đại ka', '0386408024', ', Phương Liễu, Bắc Ninh', NULL, 28054000, NULL, 'nhanh', NULL, 0, 'cod', 'Giao hàng tiêu chuẩn', NULL, 'chua_thanh_toan', 'hoan_thanh', '2025-11-20 16:07:57'),
+(26, 16, 'DH176365619416', 'Nguyễn Đức Thuận đại ka', '0386408024', ', Phương Liễu, Bắc Ninh', NULL, 25248600, 133, '', 'DA166C7721A', 2805400, 'cod', 'Giao hàng tiêu chuẩn', NULL, 'chua_thanh_toan', 'hoan_thanh', '2025-11-20 16:30:09'),
+(27, 19, 'DH176372795219', 'Nguyễn Đức Thuận', '03864080241', 'số nhà 2, Phương Liễu, Bắc Ninh', NULL, 52626000, NULL, '', NULL, 0, 'cod', 'Giao hàng tiêu chuẩn', NULL, 'chua_thanh_toan', 'hoan_thanh', '2025-11-21 12:25:54'),
+(28, 16, 'DH176372976816', 'Nguyễn Đức Thuận đại ka', '0386408024', ', Phương Liễu, Bắc Ninh', NULL, 63581700, NULL, '', NULL, 0, '', 'Giao hàng tiêu chuẩn', 'bill_16_6920619ee80771763729822.webp', 'chua_thanh_toan', 'hoan_thanh', '2025-11-21 12:57:02'),
+(29, 16, 'DH176399581616', 'Nguyễn Đức Thuận đại ka', '0386408024', ', Phương Liễu, Bắc Ninh', NULL, 42253300, NULL, '123', NULL, 0, 'cod', 'Giao hàng tiêu chuẩn', NULL, 'chua_thanh_toan', 'hoan_thanh', '2025-11-24 14:50:20');
 
 -- --------------------------------------------------------
 
@@ -172,16 +151,6 @@ CREATE TABLE `gio_hang` (
   `so_luong` int(5) NOT NULL DEFAULT 1,
   `ngay_them_vao` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Đang đổ dữ liệu cho bảng `gio_hang`
---
-
-INSERT INTO `gio_hang` (`id_gio_hang`, `id_nguoi_dung`, `id_san_pham`, `so_luong`, `ngay_them_vao`) VALUES
-(84, 16, 24, 1, '2025-11-14 15:44:09'),
-(87, 19, 25, 2, '2025-11-14 16:07:02'),
-(88, 16, 25, 1, '2025-11-14 16:16:42'),
-(89, 16, 38, 1, '2025-11-14 16:16:43');
 
 -- --------------------------------------------------------
 
@@ -235,13 +204,6 @@ CREATE TABLE `lien_he` (
   `noi_dung_xu_ly` text DEFAULT NULL COMMENT 'Nội dung admin trả lời',
   `id_nguoi_dung` int(10) UNSIGNED DEFAULT NULL COMMENT 'Nếu người dùng đã đăng nhập khi gửi'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Đang đổ dữ liệu cho bảng `lien_he`
---
-
-INSERT INTO `lien_he` (`id_lien_he`, `ten_nguoi_gui`, `email`, `so_dien_thoai`, `tieu_de`, `noi_dung`, `ngay_gui`, `trang_thai`, `tieu_de_xu_ly`, `noi_dung_xu_ly`, `id_nguoi_dung`) VALUES
-(2, 'Thuận đại ka', '20222027@eaut.edu.vn', '0386408024', 'Galaxy S26 sẽ có loạt tính năng camera cực đỉnh nhờ chip Exynos 2600', 'retfd', '2025-11-11 15:06:55', 'da_tra_loi', 'thằng chó thắng', 'đcm', 16);
 
 -- --------------------------------------------------------
 
@@ -323,7 +285,7 @@ INSERT INTO `ma_giam_gia` (`id_giam_gia`, `ma_code`, `phan_tram_giam`, `so_luong
 (130, 'DA10D716A76', 10, NULL, 0, '2025-11-29', 'hoat_dong'),
 (131, 'DA1D8B78715', 10, NULL, 0, '2025-11-29', 'hoat_dong'),
 (132, 'DA1601EDAAC', 10, NULL, 0, '2025-11-29', 'hoat_dong'),
-(133, 'DA166C7721A', 10, NULL, 0, '2025-11-29', 'hoat_dong');
+(133, 'DA166C7721A', 10, NULL, 1, '2025-11-29', 'hoat_dong');
 
 -- --------------------------------------------------------
 
@@ -380,13 +342,6 @@ CREATE TABLE `phan_anh` (
   `noi_dung_xu_ly` text DEFAULT NULL COMMENT 'Nội dung admin xử lý'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Đang đổ dữ liệu cho bảng `phan_anh`
---
-
-INSERT INTO `phan_anh` (`id_phan_anh`, `id_nguoi_dung`, `id_don_hang`, `chu_de`, `noi_dung`, `anh_1`, `anh_2`, `anh_3`, `ngay_gui`, `trang_thai`, `tieu_de_xu_ly`, `noi_dung_xu_ly`) VALUES
-(6, 16, 6, 'sản phẩm lỗi', 'ewrwrw', NULL, NULL, NULL, '2025-11-11 15:07:00', 'da_giai_quyet', 'thằng chó thắng', 'lỗi cc');
-
 -- --------------------------------------------------------
 
 --
@@ -438,26 +393,18 @@ CREATE TABLE `san_pham` (
 --
 
 INSERT INTO `san_pham` (`id`, `ten_san_pham`, `id_hang`, `ma_san_pham`, `mau_sac`, `gia_ban`, `gia_goc`, `phan_tram_giam_gia`, `ngay_bat_dau_giam`, `ngay_ket_thuc_giam`, `so_luong_ton`, `so_luong_da_ban`, `avg_rating`, `total_reviews`, `anh_dai_dien`, `mo_ta_ngan`, `mo_ta_chi_tiet`, `trang_thai`, `ngay_tao`, `ngay_cap_nhat`) VALUES
-(24, 'Samsung Galaxy S24 Ultra', 1, 'SSS24U', 'Đen', 40000000, 32990000, 10, '2025-11-13', '2025-11-28', 40, 5, 5.00, 1, 'sp_690d50a89528d1.83160844.webp', 'Flagship mới nhất của Samsung', 'Màn hình Dynamic AMOLED 2X, chip Snapdragon 8 Gen 3, camera 200MP', 'hiện', '2025-11-07 01:42:47', '2025-11-13 03:00:00'),
-(25, 'Samsung Galaxy A55', 1, 'SSA55', 'Xanh dương', 9990000, 10990000, 10, '2025-11-01', '2025-11-15', 69, 8, 5.00, 1, 'sp_690d518a033305.96398371.webp', 'Tầm trung mạnh mẽ', 'Màn hình 120Hz, chip Exynos 1480, pin 5000mAh', 'hiện', '2025-11-07 01:42:47', '2025-11-13 02:56:10'),
-(26, 'iPhone 16 Pro Max', 2, 'IP16PM', 'Titan Tự nhiên', 35990000, 38990000, 8, '2025-11-01', '2025-11-15', 60, 0, 0.00, 0, NULL, 'Flagship cao cấp nhất của Apple', 'Chip A18 Pro, camera cải tiến, màn hình 120Hz ProMotion', 'hiện', '2025-11-07 01:42:47', '2025-11-07 01:42:47'),
-(27, 'iPhone 15', 2, 'IP15', 'Hồng', 21990000, 23990000, 8, '2025-11-01', '2025-11-15', 100, 0, 0.00, 0, NULL, 'Phiên bản phổ thông mạnh mẽ', 'Chip A16 Bionic, camera kép, USB-C', 'hiện', '2025-11-07 01:42:47', '2025-11-07 01:42:47'),
-(28, 'Xiaomi 14 Ultra', 3, 'XM14U', 'Trắng', 25990000, 27990000, 7, '2025-11-01', '2025-11-15', 40, 0, 0.00, 0, NULL, 'Camera Leica cực đỉnh', 'Snapdragon 8 Gen 3, màn AMOLED 2K 120Hz', 'hiện', '2025-11-07 01:42:47', '2025-11-07 01:42:47'),
-(29, 'Redmi Note 13 Pro+', 3, 'RN13P+', 'Tím', 9990000, 10990000, 9, '2025-11-01', '2025-11-10', 120, 0, 0.00, 0, NULL, 'Điện thoại tầm trung đáng mua', 'Camera 200MP, màn AMOLED 120Hz', 'hiện', '2025-11-07 01:42:47', '2025-11-07 01:42:47'),
-(30, 'OPPO Find X7 Pro', 4, 'OFX7P', 'Đen nhám', 24990000, 26990000, 7, '2025-11-01', '2025-11-15', 35, 0, 0.00, 0, NULL, 'Flagship chụp ảnh đẹp', 'Camera Hasselblad, chip Snapdragon 8 Gen 3', 'hiện', '2025-11-07 01:42:47', '2025-11-07 01:42:47'),
-(31, 'OPPO Reno11', 4, 'OR11', 'Xanh bạc hà', 8990000, 9990000, 10, '2025-11-01', '2025-11-10', 100, 0, 0.00, 0, NULL, 'Điện thoại tầm trung thời trang', 'Chip Dimensity 7050, pin 5000mAh sạc 67W', 'hiện', '2025-11-07 01:42:47', '2025-11-07 01:42:47'),
-(32, 'Vivo X100 Pro', 5, 'VX100P', 'Đen', 23990000, 25990000, 8, '2025-11-01', '2025-11-15', 40, 0, 0.00, 0, NULL, 'Camera Zeiss hàng đầu', 'Dimensity 9300, màn AMOLED 2K 120Hz', 'hiện', '2025-11-07 01:42:47', '2025-11-07 01:42:47'),
-(33, 'Vivo V30', 5, 'VV30', 'Xanh lục bảo', 8990000, 9990000, 10, '2025-11-01', '2025-11-10', 90, 0, 0.00, 0, NULL, 'Điện thoại tầm trung mỏng nhẹ', 'Snapdragon 7 Gen 3, sạc nhanh 80W', 'hiện', '2025-11-07 01:42:47', '2025-11-07 01:42:47'),
-(34, 'OnePlus 12', 6, 'OP12', 'Xanh', 21990000, 23990000, 8, '2025-11-01', '2025-11-15', 55, 0, 0.00, 0, NULL, 'Flagship hiệu năng cao', 'Snapdragon 8 Gen 3, màn AMOLED LTPO', 'hiện', '2025-11-07 01:42:47', '2025-11-07 01:42:47'),
-(35, 'OnePlus Nord 4', 6, 'OPN4', 'Bạc', 9990000, 10990000, 9, '2025-11-01', '2025-11-10', 85, 0, 0.00, 0, NULL, 'Dòng Nord mới nhất', 'Snapdragon 7 Gen 3, pin 5000mAh', 'hiện', '2025-11-07 01:42:47', '2025-11-07 01:42:47'),
-(36, 'Realme GT6 Pro', 7, 'RGT6P', 'Vàng', 14990000, 15990000, 6, '2025-11-01', '2025-11-10', 90, 0, 0.00, 0, NULL, 'Hiệu năng vượt trội', 'Snapdragon 8s Gen 3, màn 144Hz', 'hiện', '2025-11-07 01:42:47', '2025-11-07 01:42:47'),
-(37, 'Realme 12 Pro+', 7, 'R12P+', 'Xanh nước biển', 9990000, 10990000, 9, '2025-11-01', '2025-11-10', 120, 0, 0.00, 0, NULL, 'Thiết kế sang trọng, camera tele', 'Snapdragon 7s Gen 2, pin 5000mAh', 'hiện', '2025-11-07 01:42:47', '2025-11-07 01:42:47'),
-(38, 'Google Pixel 9 Pro', 8, 'GP9P', 'Đen', 25990000, 27990000, 7, '2025-11-01', '2025-11-15', 44, 1, 0.00, 0, NULL, 'Điện thoại AI tiên tiến', 'Tensor G4, camera cực tốt, Android gốc', 'hiện', '2025-11-07 01:42:47', '2025-11-11 15:43:13'),
-(39, 'Google Pixel 8a', 8, 'GP8A', 'Xanh nhạt', 13990000, 14990000, 6, '2025-11-01', '2025-11-10', 75, 0, 0.00, 0, NULL, 'Bản giá rẻ dòng Pixel', 'Tensor G3, camera 64MP', 'hiện', '2025-11-07 01:42:47', '2025-11-07 01:42:47'),
-(40, 'Sony Xperia 1 VI', 9, 'SX1VI', 'Tím', 29990000, 31990000, 6, '2025-11-01', '2025-11-15', 30, 0, 0.00, 0, NULL, 'Điện thoại quay phim chuyên nghiệp', 'Màn 4K HDR OLED, Snapdragon 8 Gen 3', 'hiện', '2025-11-07 01:42:47', '2025-11-07 01:42:47'),
-(41, 'Sony Xperia 10 VI', 9, 'SX10VI', 'Trắng', 10990000, 11990000, 8, '2025-11-01', '2025-11-15', 50, 0, 0.00, 0, NULL, 'Tầm trung chất lượng Nhật', 'Màn OLED, Snapdragon 6 Gen 1', 'hiện', '2025-11-07 01:42:47', '2025-11-07 01:42:47'),
-(42, 'Huawei P70 Pro', 12, 'HP70P', 'Xanh lam', 24990000, 26990000, 7, '2025-11-01', '2025-11-15', 40, 0, 0.00, 0, NULL, 'Flagship với camera Leica', 'Kirin 9010, màn OLED 120Hz', 'hiện', '2025-11-07 01:42:47', '2025-11-07 01:42:47'),
-(43, 'Huawei Nova 13', 12, 'HN13', 'Tím pastel', 9990000, 10990000, 9, '2025-11-01', '2025-11-10', 80, 0, 0.00, 0, NULL, 'Dòng Nova thời trang', 'Kirin 820E, camera 108MP', 'hiện', '2025-11-07 01:42:47', '2025-11-07 01:42:47');
+(64, 'Samsung Galaxy S23 Ultra', 1, 'SS-S23U', 'Đen Phantom', 25590000, 31990000, 20, '2025-11-01', '2025-12-31', 96, 4, 5.00, 1, 'sp_691f37f42f2aa6.47234753.jpg', 'Camera 200MP, S Pen tích hợp, hiệu năng đỉnh cao.', '', 'hiện', '2025-11-20 15:35:37', '2025-11-24 14:51:56'),
+(65, 'Samsung Galaxy A54 5G', 1, 'SS-A54', 'Tím Fantasy', 8920000, 10490000, 15, '2025-11-01', '2025-12-31', 148, 2, 0.00, 0, 'sp_691f385ace4705.20845959.jpg', 'Thiết kế đẹp mắt, pin trâu, chụp ảnh sắc nét.', '', 'hiện', '2025-11-20 15:35:37', '2025-11-20 16:30:09'),
+(66, 'iPhone 15 Pro Max', 2, 'IP-15PM', 'Titan Tự Nhiên', 34950000, 37990000, 8, '2025-11-01', '2025-12-31', 78, 2, 5.00, 1, 'sp_69205b5c3d7cc3.11726540.jpg', 'Viền Titan, Chip A17 Bionic Pro, Camera 5x Tele.', '', 'hiện', '2025-11-20 15:35:37', '2025-11-21 12:58:21'),
+(67, 'iPhone SE (2022)', 2, 'IP-SE22', 'Đỏ', 11040000, 12990000, 15, '2025-11-01', '2025-12-31', 200, 0, 0.00, 0, 'sp_69205c1774bc69.39691290.jpeg', 'Chip A15 Bionic mạnh mẽ, thiết kế nhỏ gọn.', '', 'hiện', '2025-11-20 15:35:37', '2025-11-21 12:33:27'),
+(68, 'Xiaomi 13 Pro', 3, 'XM-13P', 'Sứ Trắng', 19910000, 23990000, 17, '2025-11-01', '2025-12-31', 89, 1, 0.00, 0, 'sp_69205cbde5ee56.63564359.jpg', 'Camera Leica chuyên nghiệp, sạc nhanh 120W.', '', 'hiện', '2025-11-20 15:35:37', '2025-11-24 14:50:20'),
+(69, 'Redmi Note 12', 3, 'RM-N12', 'Xanh Bầu Trời', 4760000, 5290000, 10, '2025-11-01', '2025-12-31', 300, 0, 0.00, 0, 'sp_69205d33c1f975.49999629.jpg', 'Màn hình 120Hz mượt mà, giá cả phải chăng.', '', 'hiện', '2025-11-20 15:35:37', '2025-11-21 12:38:11'),
+(70, 'OPPO Find X6 Pro', 4, 'OP-X6P', 'Đen Mực', 24630000, 27990000, 12, '2025-11-01', '2025-12-31', 70, 0, 0.00, 0, 'sp_69205e0abd30c6.54337101.jpg', 'Camera Hasselblad đỉnh cao, màn hình sáng.', '', 'hiện', '2025-11-20 15:35:37', '2025-11-21 12:41:46'),
+(71, 'OPPO Reno8 T', 4, 'OP-R8T', 'Cam Hoàng Hôn', 8540000, 9490000, 10, '2025-11-01', '2025-12-31', 180, 0, 0.00, 0, 'sp_69205ec4a65fb3.03303782.webp', 'Thiết kế da sợi thủy tinh độc đáo, camera 100MP.', '', 'hiện', '2025-11-20 15:35:37', '2025-11-21 12:44:52'),
+(72, 'Vivo X90 Pro', 5, 'VV-X90P', 'Đen', 22090000, 25990000, 15, '2025-11-01', '2025-12-31', 60, 0, 0.00, 0, 'sp_69205f31af8a61.45849588.webp', 'Camera Zeiss, Chip Dimensity 9200 mạnh mẽ.', '', 'hiện', '2025-11-20 15:35:37', '2025-11-21 12:46:41'),
+(73, 'Vivo Y35', 5, 'VV-Y35', 'Vàng', 5840000, 6490000, 10, '2025-11-01', '2025-12-31', 219, 1, 0.00, 0, 'sp_69205f8a9ef7a0.97755506.webp', 'Thiết kế vuông vắn, pin lớn.', '', 'hiện', '2025-11-20 15:35:37', '2025-11-24 14:50:20'),
+(74, 'OnePlus 11 Pro', 6, 'OP-11P', 'Xanh Titan', 19130000, 21990000, 13, '2025-11-01', '2025-12-31', 84, 1, 5.00, 1, 'sp_692060c6a68e01.09942550.webp', 'Thiết kế độc đáo, hiệu năng cực mạnh.', '', 'hiện', '2025-11-20 15:35:37', '2025-11-21 12:58:52'),
+(78, 'Google Pixel 7 Pro', 8, 'GP-7P', 'Trắng Tuyết', 18030000, 21990000, 18, '2025-11-01', '2025-12-31', 49, 1, 0.00, 0, 'sp_6920612c405f78.50042155.webp', 'Camera đỉnh cao, trải nghiệm Android thuần khiết.', '', 'hiện', '2025-11-20 15:35:37', '2025-11-21 12:57:11');
 
 -- --------------------------------------------------------
 
@@ -497,26 +444,18 @@ CREATE TABLE `thong_so_ky_thuat` (
 --
 
 INSERT INTO `thong_so_ky_thuat` (`id`, `id_san_pham`, `man_hinh`, `do_phan_giai`, `tan_so_quet`, `chip_xu_ly`, `gpu`, `ram`, `rom`, `he_dieu_hanh`, `camera_sau`, `camera_truoc`, `dung_luong_pin`, `sac`, `ket_noi`, `sim`, `trong_luong`, `chat_lieu`, `khang_nuoc_bui`, `bao_mat`, `anh_phu_1`, `anh_phu_2`, `anh_phu_3`, `anh_phu_4`) VALUES
-(24, 24, '6.8', 'QHD+', '120Hz', 'Snapdragon 8 Gen 3', 'Adreno 750', '12GB', '256GB', 'Android 14', '200MP + 12MP + 10MP', '12MP', '5000mAh', '45W', '5G, Wi-Fi 7', '2 SIM', '233g', 'Titanium', 'IP68', 'Vân tay, FaceID', 'sp_690d50a8955004.83800267.webp', 'sp_690d50a8956d13.43086757.webp', 'sp_690d50a8958954.84819333.webp', 'sp_690d50a895acc8.31113186.webp'),
-(25, 25, '6.6\\\" Super AMOLED', 'FHD+', '120Hz', 'Exynos 1480', 'Xclipse 530', '8GB', '128GB', 'Android 14', '50MP + 12MP', '32MP', '5000mAh', '25W', '5G', '2 SIM', '189g', 'Nhôm + Kính', 'IP67', 'Vân tay dưới màn', 'sp_690d518a034e82.57693427.webp', 'sp_690d518a0362c6.42597552.webp', 'sp_690d518a037572.81292048.webp', 'sp_690d518a038742.88704665.webp'),
-(26, 26, '6.9\" OLED', 'Super Retina XDR', '120Hz', 'A18 Pro', 'Apple GPU', '8GB', '256GB', 'iOS 18', '48MP + 12MP + 12MP', '12MP', '4500mAh', '20W', '5G, Wi-Fi 6E', '1 SIM', '221g', 'Titanium', 'IP68', 'FaceID', NULL, NULL, NULL, NULL),
-(27, 27, '6.1\" OLED', 'Super Retina XDR', '60Hz', 'A16 Bionic', 'Apple GPU', '6GB', '128GB', 'iOS 17', '48MP + 12MP', '12MP', '3500mAh', '20W', '5G', '1 SIM', '187g', 'Nhôm', 'IP68', 'FaceID', NULL, NULL, NULL, NULL),
-(28, 28, '6.73\" AMOLED', '2K', '120Hz', 'Snapdragon 8 Gen 3', 'Adreno 750', '16GB', '512GB', 'Android 14', '50MP + 50MP + 50MP', '32MP', '5000mAh', '90W', '5G', '2 SIM', '223g', 'Da + Nhôm', 'IP68', 'Vân tay', NULL, NULL, NULL, NULL),
-(29, 29, '6.67\" AMOLED', 'FHD+', '120Hz', 'Dimensity 7200 Ultra', 'Mali-G610', '8GB', '256GB', 'Android 14', '200MP + 8MP + 2MP', '16MP', '5100mAh', '67W', '5G', '2 SIM', '187g', 'Nhựa', 'Không', 'Vân tay cạnh', NULL, NULL, NULL, NULL),
-(30, 30, '6.82\" AMOLED', 'QHD+', '120Hz', 'Snapdragon 8 Gen 3', 'Adreno 750', '12GB', '256GB', 'Android 14', '50MP + 50MP + 50MP', '32MP', '5000mAh', '100W', '5G', '2 SIM', '215g', 'Nhôm + Kính', 'IP68', 'Vân tay quang học', NULL, NULL, NULL, NULL),
-(31, 31, '6.7\" AMOLED', 'FHD+', '120Hz', 'Dimensity 7050', 'Mali-G68', '8GB', '256GB', 'Android 14', '64MP + 8MP + 2MP', '32MP', '5000mAh', '67W', '5G', '2 SIM', '181g', 'Nhôm', 'IP54', 'Vân tay dưới màn', NULL, NULL, NULL, NULL),
-(32, 32, '6.78\" AMOLED', '2K', '120Hz', 'Dimensity 9300', 'Immortalis-G720', '16GB', '512GB', 'Android 14', '50MP + 50MP + 64MP', '32MP', '5400mAh', '100W', '5G', '2 SIM', '225g', 'Kính', 'IP68', 'Vân tay dưới màn', NULL, NULL, NULL, NULL),
-(33, 33, '6.78\" AMOLED', 'FHD+', '120Hz', 'Snapdragon 7 Gen 3', 'Adreno 720', '8GB', '256GB', 'Android 14', '50MP + 8MP + 2MP', '32MP', '5000mAh', '80W', '5G', '2 SIM', '185g', 'Nhôm', 'Không', 'Vân tay quang học', NULL, NULL, NULL, NULL),
-(34, 34, '6.82\" AMOLED', 'QHD+', '120Hz', 'Snapdragon 8 Gen 3', 'Adreno 750', '16GB', '512GB', 'Android 14', '50MP + 48MP + 64MP', '32MP', '5400mAh', '100W', '5G', '2 SIM', '220g', 'Nhôm', 'IP68', 'Vân tay dưới màn', NULL, NULL, NULL, NULL),
-(35, 35, '6.74\" AMOLED', 'FHD+', '120Hz', 'Snapdragon 7 Gen 3', 'Adreno 720', '8GB', '256GB', 'Android 14', '50MP + 8MP + 2MP', '16MP', '5000mAh', '80W', '5G', '2 SIM', '195g', 'Nhôm', 'Không', 'Vân tay cạnh', NULL, NULL, NULL, NULL),
-(36, 36, '6.78\" AMOLED', 'FHD+', '144Hz', 'Snapdragon 8s Gen 3', 'Adreno 735', '12GB', '256GB', 'Android 14', '50MP + 8MP + 2MP', '32MP', '5500mAh', '120W', '5G', '2 SIM', '210g', 'Nhôm', 'Không', 'Vân tay dưới màn', NULL, NULL, NULL, NULL),
-(37, 37, '6.7\" AMOLED', 'FHD+', '120Hz', 'Snapdragon 7s Gen 2', 'Adreno 710', '8GB', '256GB', 'Android 14', '50MP + 8MP + 32MP', '32MP', '5000mAh', '67W', '5G', '2 SIM', '190g', 'Nhôm', 'Không', 'Vân tay dưới màn', NULL, NULL, NULL, NULL),
-(38, 38, '6.8\" OLED', 'QHD+', '120Hz', 'Tensor G4', 'Mali-G715', '12GB', '256GB', 'Android 15', '50MP + 48MP + 64MP', '32MP', '5050mAh', '30W', '5G', '1 SIM', '223g', 'Nhôm', 'IP68', 'FaceID, Vân tay', NULL, NULL, NULL, NULL),
-(39, 39, '6.1\" OLED', 'FHD+', '120Hz', 'Tensor G3', 'Mali-G710', '8GB', '128GB', 'Android 14', '64MP + 13MP', '13MP', '4492mAh', '27W', '5G', '1 SIM', '187g', 'Nhựa', 'IP67', 'Vân tay', NULL, NULL, NULL, NULL),
-(40, 40, '6.5\" OLED', '4K HDR', '120Hz', 'Snapdragon 8 Gen 3', 'Adreno 750', '12GB', '256GB', 'Android 14', '48MP + 12MP + 12MP', '12MP', '5000mAh', '30W', '5G', '2 SIM', '187g', 'Nhôm', 'IP68', 'Vân tay cạnh', NULL, NULL, NULL, NULL),
-(41, 41, '6.1\" OLED', 'FHD+', '60Hz', 'Snapdragon 6 Gen 1', 'Adreno 710', '8GB', '128GB', 'Android 14', '48MP + 8MP + 2MP', '12MP', '5000mAh', '30W', '5G', '2 SIM', '177g', 'Nhựa', 'Không', 'Vân tay', NULL, NULL, NULL, NULL),
-(42, 42, '6.7\" OLED', '2K', '120Hz', 'Kirin 9010', 'Mali-G720', '12GB', '512GB', 'HarmonyOS 4', '50MP + 48MP + 12MP', '32MP', '5000mAh', '88W', '5G', '2 SIM', '218g', 'Kính + Nhôm', 'IP68', 'Vân tay quang học', NULL, NULL, NULL, NULL),
-(43, 43, '6.7\" OLED', 'FHD+', '120Hz', 'Kirin 820E', 'Mali-G57', '8GB', '256GB', 'HarmonyOS 4', '108MP + 8MP + 2MP', '32MP', '5000mAh', '66W', '5G', '2 SIM', '190g', 'Nhựa', 'Không', 'Vân tay cạnh', NULL, NULL, NULL, NULL);
+(64, 64, 'Dynamic AMOLED 2X', 'QHD+ (3088 x 1440)', '120Hz', 'Snapdragon 8 Gen 2 for Galaxy', 'Adreno 740', '8GB', '256GB', 'Android 13', 'Chính 200MP, Góc rộng 12MP, 2x Tele 10MP', '', '5000 mAh', '45W', '', '', '', '', '', '', 'sp_691f37f42f5703.86914751.jpg', 'sp_691f37f42f7ba3.83526986.jpg', 'sp_691f37f42f9842.96062701.jpg', 'sp_691f37f42fe6c8.37619624.jpg'),
+(65, 65, 'Super AMOLED', 'Full HD+ (2340 x 1080)', '120Hz', 'Exynos 1380', '', '8GB', '128GB', 'Android 13', 'Chính 50MP, Góc rộng 12MP, Macro 5MP', '', '5000 mAh', '25W', '', '', '', '', '', '', 'sp_691f385ace7291.34590754.webp', 'sp_691f385ace9f58.69414219.webp', 'sp_691f385acec7e2.01935148.jpg', 'sp_691f385aceed45.62902637.jpg'),
+(66, 66, 'Super Retina XDR OLED', '2796 x 1290 Pixels', '120Hz', 'Apple A17 Bionic Pro', '', '8GB', '256GB', 'iOS 17', 'Chính 48MP, Góc rộng 12MP, Tele 12MP (5x)', '', '', '27W', '', '', '', '', '', '', 'sp_69205b5c3db379.31641594.jpg', 'sp_69205b5c3ddb87.55551858.jpg', 'sp_69205b5c3e0f67.88239423.jpg', 'sp_69205b5c3e3076.43196416.jpg'),
+(67, 67, 'Retina IPS LCD', '1334 x 750 Pixels', '60 Hz', 'Apple A15 Bionic', '', '4GB', '64GB', 'iOS 15', '12MP', '7MP', '2018 mAh', '', '', '2 SIM', '144 g', 'Khung kim loại & Mặt lưng kính', '', '', 'sp_69205c1774e7d4.43605469.webp', 'sp_69205c177509b9.67820911.jpg', 'sp_69205c17752b85.57286125.jpg', 'sp_69205c17755bc6.18656348.jpg'),
+(68, 68, 'AMOLED LTPO', '2K (3200 x 1440)', '120Hz', 'Snapdragon 8 Gen 2', '', '12GB', '512GB', 'Android 13', 'Chính 50MP, Tele 50MP, Góc siêu rộng 50MP', '', '4820 mAh', '120W', '', '', '', '', '', '', 'sp_69205cbde62416.35290976.jpg', 'sp_69205cbde66636.54479836.jpg', 'sp_69205cbde693b2.62599901.jpg', 'sp_69205cbde6dd45.97871276.jpg'),
+(69, 69, 'AMOLED', 'Full HD+', '120Hz', 'Snapdragon 685', '', '4GB', '128GB', 'Android 13', 'Chính 50MP, Góc rộng 8MP, Macro 2MP', '', '5000 mAh', '33W', '', '', '', '', '', '', 'sp_69205d4c266341.27262218.jpg', 'sp_69205d33c22ed3.00722378.jpg', 'sp_69205d33c26488.85199250.jpg', 'sp_69205d33c28311.33118966.jpg'),
+(70, 70, 'AMOLED E6', 'QHD+', '120Hz', 'Snapdragon 8 Gen 2', '', '12GB', '256GB', 'Android 13', 'Chính 50MP, Tele 50MP, Góc siêu rộng 50MP', '', '5000 mAh', '100W', '', '', '', '', '', '', 'sp_69205e0abd5534.81366679.jpg', 'sp_69205e0abd7a62.05022895.jpg', 'sp_69205e0abd9f38.26758624.jpg', 'sp_69205e0abdc237.21363853.jpg'),
+(71, 71, 'AMOLED', 'Full HD+', '90Hz', 'MediaTek Helio G99', '', '8GB', '256GB', 'Android 13', 'Chính 100MP, Macro 2MP, Đo chiều sâu 2MP', '', '5000 mAh', '33W', '', '', '', '', '', '', 'sp_69205ec4a69570.30262740.webp', 'sp_69205ec4a6c959.78047280.webp', 'sp_69205ec4a6f345.03781197.webp', 'sp_69205ec4a7e1f6.00913624.webp'),
+(72, 72, 'AMOLED', 'Full HD+', '120Hz', 'MediaTek Dimensity 9200', '', '12GB', '256GB', 'Android 13', 'Chính 50MP (Cảm biến 1 inch), Tele 50MP, Góc rộng 12MP', '', '4870 mAh', '120W', '', '', '', '', '', '', 'sp_69205f31afbb48.53795461.webp', 'sp_69205f31afec32.26026063.webp', 'sp_69205f31b03816.17677408.webp', 'sp_69205f31b06037.88441063.webp'),
+(73, 73, 'IPS LCD', 'Full HD+', '', 'Snapdragon 680', '', '8GB', '128GB', 'Android 12', 'Chính 50MP, Macro 2MP, Đo chiều sâu 2MP', '', '5000 mAh', '44W', '', '', '', '', '', '', 'sp_69205f8a9f5155.16003537.webp', 'sp_69205f8a9f7a71.36311001.webp', 'sp_69205f8a9fa556.04265522.webp', 'sp_69205f8a9fcd20.03962870.webp'),
+(74, 74, 'Fluid AMOLED', 'QHD+', '120Hz', 'Snapdragon 8 Gen 2', '', '16GB', '512GB', 'Android 13', 'Chính 50MP, Góc siêu rộng 48MP, Tele 32MP', '', '5000 mAh', '100W', '', '', '', '', '', '', 'sp_692060c6a6c374.01110927.webp', 'sp_692060c6a6ef63.12605231.webp', 'sp_692060c6a73002.57591058.webp', 'sp_692060c6a76232.48141779.webp'),
+(78, 78, 'LTPO AMOLED', 'QHD+', '120Hz', 'Google Tensor G2', '', '12GB', '256GB', 'Android 13', 'Chính 50MP, Góc rộng 12MP, Tele 48MP (5x)', '', '5000 mAh', '', '', '', '', '', 'IP68', '', 'sp_6920612c409a26.47075429.webp', 'sp_6920612c40d249.30052513.jpg', 'sp_6920612c40f936.35373265.webp', 'sp_6920612c412010.08219238.webp');
 
 -- --------------------------------------------------------
 
@@ -672,25 +611,25 @@ ALTER TABLE `binh_luan`
 -- AUTO_INCREMENT cho bảng `chi_tiet_don_hang`
 --
 ALTER TABLE `chi_tiet_don_hang`
-  MODIFY `id_chi_tiet` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+  MODIFY `id_chi_tiet` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
 
 --
 -- AUTO_INCREMENT cho bảng `danh_gia_san_pham`
 --
 ALTER TABLE `danh_gia_san_pham`
-  MODIFY `id_danh_gia` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id_danh_gia` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT cho bảng `don_hang`
 --
 ALTER TABLE `don_hang`
-  MODIFY `id_don_hang` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id_don_hang` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT cho bảng `gio_hang`
 --
 ALTER TABLE `gio_hang`
-  MODIFY `id_gio_hang` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=90;
+  MODIFY `id_gio_hang` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=113;
 
 --
 -- AUTO_INCREMENT cho bảng `hang_san_xuat`
@@ -732,13 +671,13 @@ ALTER TABLE `quang_cao_slider`
 -- AUTO_INCREMENT cho bảng `san_pham`
 --
 ALTER TABLE `san_pham`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=84;
 
 --
 -- AUTO_INCREMENT cho bảng `thong_so_ky_thuat`
 --
 ALTER TABLE `thong_so_ky_thuat`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=84;
 
 --
 -- AUTO_INCREMENT cho bảng `tin_tuc`

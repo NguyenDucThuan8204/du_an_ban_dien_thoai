@@ -288,6 +288,62 @@ require 'dung_chung/dau_trang.php';
             opacity: 0;
             animation: fadeInUp 0.5s ease forwards;
         }
+        /* 1. Nút tròn để bật/tắt chat */
+    #toggle-chat-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        background-color: #007bff; /* Màu xanh giống chatbot */
+        color: white;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        z-index: 9999;
+        font-size: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s;
+    }
+    #toggle-chat-btn:hover {
+        transform: scale(1.1);
+    }
+
+    /* 2. Khung chứa Iframe (Mặc định ẩn) */
+    #chatbot-frame-container {
+        display: none; /* Ẩn đi ban đầu */
+        position: fixed;
+        bottom: 100px; /* Cách nút bấm 1 chút */
+        right: 30px;
+        width: 400px; /* Chiều rộng khung chat */
+        height: 600px; /* Chiều cao khung chat */
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        z-index: 9999;
+        overflow: hidden;
+        border: 1px solid #ddd;
+    }
+
+    /* 3. Thẻ Iframe load file index.html */
+    #chatbot-iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    /* Responsive cho điện thoại */
+    @media (max-width: 480px) {
+        #chatbot-frame-container {
+            width: 90%;
+            right: 5%;
+            bottom: 100px;
+            height: 70vh;
+        }
+    }
     </style>
     <script>
         tailwind.config = {
@@ -647,6 +703,27 @@ require 'dung_chung/dau_trang.php';
             
         });
     </script>
+    <button id="toggle-chat-btn" onclick="toggleChatbot()">
+    <i class="fas fa-comment-dots"></i> </button>
+
+<div id="chatbot-frame-container">
+    <iframe id="chatbot-iframe" src="index.html"></iframe>
+</div>
+
+<script>
+    function toggleChatbot() {
+        var container = document.getElementById('chatbot-frame-container');
+        var btn = document.getElementById('toggle-chat-btn');
+        
+        if (container.style.display === 'none' || container.style.display === '') {
+            container.style.display = 'block';
+            btn.innerHTML = '<i class="fas fa-times"></i>'; // Đổi icon thành dấu X
+        } else {
+            container.style.display = 'none';
+            btn.innerHTML = '<i class="fas fa-comment-dots"></i>'; // Đổi lại icon chat
+        }
+    }
+</script>
 </body>
 </html>
 <?php
